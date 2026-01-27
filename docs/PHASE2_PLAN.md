@@ -57,11 +57,11 @@ Phase 2 将实现 SIAPS 的核心预测功能，包括技术指标计算、机�
 class TechnicalIndicators:
     """技术指标计算器"""
     
-    def calculate_ma(self, data, period, ma_type='SMA'):
-    def calculate_macd(self, data, fast=12, slow=26, signal=9):
-    def calculate_rsi(self, data, period=14):
-    def calculate_bollinger_bands(self, data, period=20, std=2):
-    def calculate_all_indicators(self, data):
+    def calculate_ma(self, data: pd.DataFrame, period: int, ma_type: str = 'SMA') -> pd.Series:
+    def calculate_macd(self, data: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    def calculate_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def calculate_bollinger_bands(self, data: pd.DataFrame, period: int = 20, std: int = 2) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    def calculate_all_indicators(self, data: pd.DataFrame) -> pd.DataFrame:
 ```
 
 #### 1.3 数据预处理
@@ -127,9 +127,9 @@ class TechnicalIndicators:
 class PredictionEngine:
     """预测引擎 - 整合多个模型"""
     
-    def predict_short_term(self, stock_code) -> ShortTermPrediction:
-    def predict_long_term(self, stock_code) -> LongTermPrediction:
-    def get_ensemble_prediction(self, stock_code) -> EnsemblePrediction:
+    def predict_short_term(self, stock_code: str) -> ShortTermPrediction:
+    def predict_long_term(self, stock_code: str) -> LongTermPrediction:
+    def get_ensemble_prediction(self, stock_code: str) -> EnsemblePrediction:
 ```
 
 **短期预测 (1天)**
@@ -148,9 +148,9 @@ class PredictionEngine:
 class TradingRecommendation:
     """交易建议生成器"""
     
-    def generate_recommendation(self, prediction) -> TradingAdvice:
-    def calculate_entry_exit_points(self, stock_data) -> EntryExitPoints:
-    def assess_risk(self, stock_code) -> RiskAssessment:
+    def generate_recommendation(self, prediction: PredictionResult) -> TradingAdvice:
+    def calculate_entry_exit_points(self, stock_data: pd.DataFrame) -> EntryExitPoints:
+    def assess_risk(self, stock_code: str) -> RiskAssessment:
 ```
 
 **功能实现**
@@ -227,7 +227,7 @@ Phase 2 将使用以下库（已在 requirements.txt 中列出）：
 ### 机器学习框架
 - **PyTorch** (>=2.0.0) - LSTM/GRU 实现
 - **TensorFlow** (>=2.13.0) - 备选深度学习框架
-- **XGBoost** - 梯度提升树模型
+- **XGBoost** (>=1.7.0) - 梯度提升树模型
 
 ### 技术分析
 - **TA-Lib** (>=0.4.28) - 技术指标库
