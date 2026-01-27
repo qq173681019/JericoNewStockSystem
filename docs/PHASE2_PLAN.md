@@ -57,11 +57,11 @@ Phase 2 将实现 SIAPS 的核心预测功能，包括技术指标计算、机�
 class TechnicalIndicators:
     """技术指标计算器"""
     
-    def calculate_ma(self, data, period, ma_type='SMA')
-    def calculate_macd(self, data, fast=12, slow=26, signal=9)
-    def calculate_rsi(self, data, period=14)
-    def calculate_bollinger_bands(self, data, period=20, std=2)
-    def calculate_all_indicators(self, data)
+    def calculate_ma(self, data, period, ma_type='SMA'):
+    def calculate_macd(self, data, fast=12, slow=26, signal=9):
+    def calculate_rsi(self, data, period=14):
+    def calculate_bollinger_bands(self, data, period=20, std=2):
+    def calculate_all_indicators(self, data):
 ```
 
 #### 1.3 数据预处理
@@ -127,9 +127,9 @@ class TechnicalIndicators:
 class PredictionEngine:
     """预测引擎 - 整合多个模型"""
     
-    def predict_short_term(self, stock_code) -> ShortTermPrediction
-    def predict_long_term(self, stock_code) -> LongTermPrediction
-    def get_ensemble_prediction(self, stock_code) -> EnsemblePrediction
+    def predict_short_term(self, stock_code) -> ShortTermPrediction:
+    def predict_long_term(self, stock_code) -> LongTermPrediction:
+    def get_ensemble_prediction(self, stock_code) -> EnsemblePrediction:
 ```
 
 **短期预测 (1天)**
@@ -148,9 +148,9 @@ class PredictionEngine:
 class TradingRecommendation:
     """交易建议生成器"""
     
-    def generate_recommendation(self, prediction) -> TradingAdvice
-    def calculate_entry_exit_points(self, stock_data) -> EntryExitPoints
-    def assess_risk(self, stock_code) -> RiskAssessment
+    def generate_recommendation(self, prediction) -> TradingAdvice:
+    def calculate_entry_exit_points(self, stock_data) -> EntryExitPoints:
+    def assess_risk(self, stock_code) -> RiskAssessment:
 ```
 
 **功能实现**
