@@ -1,0 +1,35 @@
+# Core dependencies
+python-dotenv>=1.0.0
+
+# Data acquisition
+akshare>=1.12.0
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+
+# Data processing
+scikit-learn>=1.3.0
+ta-lib>=0.4.28  # Technical Analysis Library
+
+# Machine Learning / Deep Learning
+torch>=2.0.0
+tensorflow>=2.13.0
+prophet>=1.1.5
+
+# GUI Framework
+customtkinter>=5.2.0
+Pillow>=10.0.0
+matplotlib>=3.7.0
+
+# Database
+sqlalchemy>=2.0.0
+
+# Utilities
+python-dateutil>=2.8.2
+pytz>=2023.3
+
+# Development dependencies
+pytest>=7.4.0
+pytest-cov>=4.1.0
+black>=23.7.0
+flake8>=6.1.0
