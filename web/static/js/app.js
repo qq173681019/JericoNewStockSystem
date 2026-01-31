@@ -1,3 +1,10 @@
+// Constants
+const CONFIDENCE_RANGE = 0.3;
+const MIN_CONFIDENCE = 0.65;
+const PRICE_RANGE = 50;
+const MIN_PRICE = 10;
+const MAX_HISTORY_SIZE = 100;
+
 // App State Management
 const appState = {
     currentView: 'home',
@@ -141,8 +148,8 @@ async function runPrediction() {
 function generateMockPrediction(stockCode, predictionType) {
     const directions = ['up', 'down', 'neutral'];
     const direction = directions[Math.floor(Math.random() * directions.length)];
-    const confidence = (Math.random() * 0.3 + 0.65).toFixed(2); // 0.65-0.95
-    const currentPrice = (Math.random() * 50 + 10).toFixed(2);
+    const confidence = (Math.random() * CONFIDENCE_RANGE + MIN_CONFIDENCE).toFixed(2);
+    const currentPrice = generateRandomPrice();
     const predictedPrice = direction === 'up' 
         ? (parseFloat(currentPrice) * (1 + Math.random() * 0.1)).toFixed(2)
         : direction === 'down'
@@ -168,6 +175,11 @@ function generateMockPrediction(stockCode, predictionType) {
         timestamp: new Date().toISOString(),
         recommendation: direction === 'up' ? '建议买入' : direction === 'down' ? '建议卖出' : '建议持有'
     };
+}
+
+// Helper function to generate random stock price
+function generateRandomPrice() {
+    return (Math.random() * PRICE_RANGE + MIN_PRICE).toFixed(2);
 }
 
 // Display Prediction Result
@@ -257,9 +269,9 @@ function savePredictionToHistory(result) {
         timestamp: new Date().toISOString()
     });
     
-    // Keep only last 100 predictions
-    if (appState.predictionHistory.length > 100) {
-        appState.predictionHistory = appState.predictionHistory.slice(0, 100);
+    // Keep only last MAX_HISTORY_SIZE predictions
+    if (appState.predictionHistory.length > MAX_HISTORY_SIZE) {
+        appState.predictionHistory = appState.predictionHistory.slice(0, MAX_HISTORY_SIZE);
     }
     
     saveToLocalStorage();
@@ -302,7 +314,7 @@ function addToWatchlist() {
         name,
         targetPrice: targetPrice || null,
         stopLoss: stopLoss || null,
-        currentPrice: (Math.random() * 50 + 10).toFixed(2),
+        currentPrice: generateRandomPrice(),
         addedAt: new Date().toISOString()
     });
     
@@ -350,21 +362,21 @@ function renderWatchlist() {
             
             <div style="margin: 1rem 0;">
                 <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">
-                    ¥${item.currentPrice}
+                    ¥${typeof item.currentPrice === 'number' ? item.currentPrice.toFixed(2) : item.currentPrice}
                 </div>
             </div>
             
             ${item.targetPrice ? `
                 <div class="price-info" style="margin-bottom: 0.5rem;">
                     <span class="price-label">目标价格</span>
-                    <span class="price-value">¥${item.targetPrice}</span>
+                    <span class="price-value">¥${typeof item.targetPrice === 'number' ? item.targetPrice.toFixed(2) : item.targetPrice}</span>
                 </div>
             ` : ''}
             
             ${item.stopLoss ? `
                 <div class="price-info">
                     <span class="price-label">止损价格</span>
-                    <span class="price-value">¥${item.stopLoss}</span>
+                    <span class="price-value">¥${typeof item.stopLoss === 'number' ? item.stopLoss.toFixed(2) : item.stopLoss}</span>
                 </div>
             ` : ''}
         </div>
@@ -463,7 +475,7 @@ function loadInitialData() {
                 name: '平安银行',
                 targetPrice: 15.0,
                 stopLoss: 12.0,
-                currentPrice: '13.45',
+                currentPrice: 13.45,
                 addedAt: new Date().toISOString()
             },
             {
@@ -472,7 +484,7 @@ function loadInitialData() {
                 name: '浦发银行',
                 targetPrice: 10.0,
                 stopLoss: 8.0,
-                currentPrice: '9.23',
+                currentPrice: 9.23,
                 addedAt: new Date().toISOString()
             }
         ];
