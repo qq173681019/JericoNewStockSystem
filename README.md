@@ -93,15 +93,49 @@ cp .env.example .env
 ```
 
 5. **运行应用**
+
 ```bash
+# 方式一：运行桌面版 (CustomTkinter GUI)
 python main.py
+
+# 方式二：运行 Web 版 (推荐)
+python run_web_ui.py
+# 然后在浏览器中访问 http://127.0.0.1:5000
 ```
+
+## 🌐 Web UI 界面
+
+SIAPS 现在提供了现代化的 Web 界面！
+
+### Web UI 特性
+- ✨ **美观的现代化设计**: 响应式布局，支持深色/浅色主题
+- 📱 **跨平台支持**: 支持桌面端和移动端浏览器
+- 🚀 **轻量级后端**: 基于 Flask 的最小化后端
+- 📊 **实时数据可视化**: 使用 Chart.js 展示价格走势和技术指标
+- 🎯 **直观的用户体验**: 流畅的动画和交互
+
+### 快速启动 Web UI
+
+```bash
+# 安装依赖（如果还没有安装）
+pip install -r requirements.txt
+
+# 启动 Web 服务器
+python run_web_ui.py
+
+# 浏览器会自动打开，或手动访问
+# http://127.0.0.1:5000
+```
+
+详细的 Web UI 文档请参阅：[web_ui/README.md](web_ui/README.md)
 
 ## 🔧 技术架构
 
 ### 系统分层
 
-1. **表示层**: CustomTkinter GUI框架
+1. **表示层**: 
+   - CustomTkinter GUI 框架（桌面版）
+   - HTML/CSS/JavaScript + Flask（Web 版）
 2. **业务逻辑层**: 预测引擎 + 交易建议引擎
 3. **数据处理层**: 特征工程 + 数据清洗
 4. **数据获取层**: AKShare、TuShare等多源API
@@ -109,7 +143,10 @@ python main.py
 
 ### 核心技术栈
 
-- **GUI框架**: CustomTkinter
+- **GUI框架**: 
+  - CustomTkinter（桌面版）
+  - Flask + HTML/CSS/JS（Web版）
+- **前端可视化**: Chart.js, Font Awesome
 - **数据获取**: AKShare, TuShare
 - **数据处理**: Pandas, NumPy
 - **机器学习**: Scikit-learn
