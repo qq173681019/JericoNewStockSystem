@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAPS - 股票智能分析预测系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-chart-line"></i>
+                <h1>SIAPS</h1>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-view="home">
+                    <i class="fas fa-home"></i>
+                    <span>首页</span>
+                </a>
+                <a href="#" class="nav-item" data-view="prediction">
+                    <i class="fas fa-crystal-ball"></i>
+                    <span>股票预测</span>
+                </a>
+                <a href="#" class="nav-item" data-view="watchlist">
+                    <i class="fas fa-eye"></i>
+                    <span>观测池</span>
+                </a>
+                <a href="#" class="nav-item" data-view="history">
+                    <i class="fas fa-history"></i>
+                    <span>历史记录</span>
+                </a>
+                <a href="#" class="nav-item" data-view="analysis">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>技术分析</span>
+                </a>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                    <label class="switch">
+                        <input type="checkbox" id="theme-switch">
+                        <span class="slider"></span>
+                    </label>
+                    <i class="fas fa-sun"></i>
+                </div>
+                <div class="version">v0.1.0</div>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="搜索股票代码或名称..." id="global-search">
+                </div>
+                <div class="user-info">
+                    <span class="time" id="current-time"></span>
+                    <i class="fas fa-bell notification-icon"></i>
+                </div>
+            </header>
+            
+            <div class="content-area">
+                <!-- Home View -->
+                <section id="home-view" class="view active">
+                    <div class="welcome-section">
+                        <h2 class="welcome-title">欢迎使用 SIAPS</h2>
+                        <p class="welcome-subtitle">股票智能分析预测系统</p>
+                        
+                        <div class="feature-cards">
+                            <div class="feature-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h3>短期预测</h3>
+                                <p>AI驱动的当日涨跌预测和波动分析</p>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <h3>中长期趋势</h3>
+                                <p>未来3个月目标价位和趋势预测</p>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-lightbulb"></i>
+                                </div>
+                                <h3>智能建议</h3>
+                                <p>基于技术分析的交易操作建议</p>
+                            </div>
+                            
+                            <div class="feature-card">
+                                <div class="card-icon">
+                                    <i class="fas fa-chart-pie"></i>
+                                </div>
+                                <h3>技术指标</h3>
+                                <p>MA、MACD、RSI等多维度技术分析</p>
+                            </div>
+                        </div>
+                        
+                        <button class="cta-button" onclick="navigateToView('prediction')">
+                            <i class="fas fa-rocket"></i>
+                            开始分析
+                        </button>
+                    </div>
+                </section>
+                
+                <!-- Prediction View -->
+                <section id="prediction-view" class="view">
+                    <div class="view-header">
+                        <h2><i class="fas fa-crystal-ball"></i> 股票预测</h2>
+                    </div>
+                    
+                    <div class="prediction-container">
+                        <div class="input-section">
+                            <div class="input-group">
+                                <label for="stock-code">股票代码</label>
+                                <input type="text" id="stock-code" placeholder="例如: 000001" maxlength="6">
+                            </div>
+                            
+                            <div class="input-group">
+                                <label for="prediction-type">预测类型</label>
+                                <select id="prediction-type">
+                                    <option value="short">短期预测 (1天)</option>
+                                    <option value="medium">中期预测 (1周)</option>
+                                    <option value="long">长期预测 (3个月)</option>
+                                </select>
+                            </div>
+                            
+                            <button class="predict-button" onclick="runPrediction()">
+                                <i class="fas fa-play"></i>
+                                开始预测
+                            </button>
+                        </div>
+                        
+                        <div class="results-section" id="prediction-results">
+                            <div class="placeholder">
+                                <i class="fas fa-chart-line placeholder-icon"></i>
+                                <p>输入股票代码并选择预测类型开始分析</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Watchlist View -->
+                <section id="watchlist-view" class="view">
+                    <div class="view-header">
+                        <h2><i class="fas fa-eye"></i> 观测池</h2>
+                        <button class="add-button" onclick="showAddStockModal()">
+                            <i class="fas fa-plus"></i>
+                            添加股票
+                        </button>
+                    </div>
+                    
+                    <div class="watchlist-grid" id="watchlist-grid">
+                        <!-- Dynamic content will be loaded here -->
+                    </div>
+                </section>
+                
+                <!-- History View -->
+                <section id="history-view" class="view">
+                    <div class="view-header">
+                        <h2><i class="fas fa-history"></i> 历史记录</h2>
+                        <div class="filter-group">
+                            <select id="history-filter">
+                                <option value="all">全部记录</option>
+                                <option value="today">今天</option>
+                                <option value="week">本周</option>
+                                <option value="month">本月</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="history-table-container">
+                        <table class="history-table" id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>时间</th>
+                                    <th>股票代码</th>
+                                    <th>股票名称</th>
+                                    <th>预测类型</th>
+                                    <th>预测方向</th>
+                                    <th>置信度</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamic content will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+                
+                <!-- Analysis View -->
+                <section id="analysis-view" class="view">
+                    <div class="view-header">
+                        <h2><i class="fas fa-chart-bar"></i> 技术分析</h2>
+                    </div>
+                    
+                    <div class="analysis-container">
+                        <div class="chart-section">
+                            <div class="chart-placeholder">
+                                <i class="fas fa-chart-area"></i>
+                                <p>选择股票查看技术分析图表</p>
+                            </div>
+                        </div>
+                        
+                        <div class="indicators-panel">
+                            <h3>技术指标</h3>
+                            <div class="indicator-list">
+                                <div class="indicator-item">
+                                    <span class="indicator-name">MA5</span>
+                                    <span class="indicator-value">--</span>
+                                </div>
+                                <div class="indicator-item">
+                                    <span class="indicator-name">MA10</span>
+                                    <span class="indicator-value">--</span>
+                                </div>
+                                <div class="indicator-item">
+                                    <span class="indicator-name">MACD</span>
+                                    <span class="indicator-value">--</span>
+                                </div>
+                                <div class="indicator-item">
+                                    <span class="indicator-name">RSI</span>
+                                    <span class="indicator-value">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal for adding stock to watchlist -->
+    <div id="add-stock-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加股票到观测池</h3>
+                <span class="close" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="input-group">
+                    <label>股票代码</label>
+                    <input type="text" id="modal-stock-code" placeholder="例如: 000001">
+                </div>
+                <div class="input-group">
+                    <label>股票名称</label>
+                    <input type="text" id="modal-stock-name" placeholder="平安银行">
+                </div>
+                <div class="input-group">
+                    <label>目标价格</label>
+                    <input type="number" id="modal-target-price" placeholder="15.00" step="0.01">
+                </div>
+                <div class="input-group">
+                    <label>止损价格</label>
+                    <input type="number" id="modal-stop-loss" placeholder="12.00" step="0.01">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeModal()">取消</button>
+                <button class="btn-primary" onclick="addToWatchlist()">添加</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

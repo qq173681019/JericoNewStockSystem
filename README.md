@@ -93,6 +93,14 @@ cp .env.example .env
 ```
 
 5. **运行应用**
+
+**方式一: Web 界面（推荐）**
+```bash
+python web_ui.py
+# 然后在浏览器中访问 http://127.0.0.1:5000
+```
+
+**方式二: 桌面界面**
 ```bash
 python main.py
 ```
@@ -101,7 +109,7 @@ python main.py
 
 ### 系统分层
 
-1. **表示层**: CustomTkinter GUI框架
+1. **表示层**: 现代化 Web UI (Flask + HTML/CSS/JS) + CustomTkinter 桌面 GUI
 2. **业务逻辑层**: 预测引擎 + 交易建议引擎
 3. **数据处理层**: 特征工程 + 数据清洗
 4. **数据获取层**: AKShare、TuShare等多源API
@@ -109,7 +117,8 @@ python main.py
 
 ### 核心技术栈
 
-- **GUI框架**: CustomTkinter
+- **Web界面**: Flask, HTML5, CSS3, JavaScript
+- **桌面GUI**: CustomTkinter
 - **数据获取**: AKShare, TuShare
 - **数据处理**: Pandas, NumPy
 - **机器学习**: Scikit-learn
@@ -120,19 +129,27 @@ python main.py
 
 ## 📖 使用指南
 
+### Web 界面使用
+
+详细的 Web 界面使用说明请参考 [web/README.md](web/README.md)
+
 ### 基本操作
 
 1. **股票预测**
    - 在主界面输入股票代码（如：000001）
+   - 选择预测类型（短期/中期/长期）
    - 点击"开始预测"按钮
    - 查看预测结果和交易建议
 
 2. **观测池管理**
+   - 点击"添加股票"按钮
+   - 填写股票代码、名称和目标价格
    - 添加关注的股票到观测池
-   - 设置目标价格、止损止盈价格
-   - 启用价格监控和预警
+   - 设置目标价格、止损价格
+   - 实时查看观测池中的股票
 
 3. **历史记录查询**
+   - 点击"历史记录"查看所有预测
    - 查看历史预测记录
    - 分析预测准确率
    - 导出数据报告
