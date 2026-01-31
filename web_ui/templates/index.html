@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAPS - 股票智能分析预测系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-chart-line"></i> SIAPS</h2>
+            <p class="version">v0.1.0</p>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-page="prediction">
+                <i class="fas fa-crystal-ball"></i>
+                <span>股票预测</span>
+            </a>
+            <a href="#" class="nav-item" data-page="watchlist">
+                <i class="fas fa-eye"></i>
+                <span>观测池</span>
+            </a>
+            <a href="#" class="nav-item" data-page="history">
+                <i class="fas fa-history"></i>
+                <span>历史记录</span>
+            </a>
+            <a href="#" class="nav-item" data-page="analysis">
+                <i class="fas fa-chart-bar"></i>
+                <span>技术分析</span>
+            </a>
+            <a href="#" class="nav-item" data-page="settings">
+                <i class="fas fa-cog"></i>
+                <span>设置</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="theme-toggle">
+                <i class="fas fa-sun"></i>
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+                <i class="fas fa-moon"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <header class="topbar">
+            <button class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-right">
+                <div class="search-box">
+                    <input type="text" id="quick-search" placeholder="快速搜索股票...">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="user-info">
+                    <i class="fas fa-user-circle"></i>
+                    <span>用户</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Container -->
+        <div class="page-container">
+            <!-- Prediction Page -->
+            <div class="page active" id="prediction-page">
+                <div class="page-header">
+                    <h1>股票预测分析</h1>
+                    <p>输入股票代码，获取智能预测和交易建议</p>
+                </div>
+
+                <div class="prediction-input-section">
+                    <div class="input-card">
+                        <div class="input-group">
+                            <label for="stock-code">股票代码</label>
+                            <div class="input-with-icon">
+                                <input type="text" id="stock-code" placeholder="例如: 000001, 600000" />
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="prediction-type">预测类型</label>
+                            <select id="prediction-type">
+                                <option value="short">短期预测 (1天)</option>
+                                <option value="medium">中期预测 (1周)</option>
+                                <option value="long">长期预测 (3个月)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="predict-btn">
+                            <i class="fas fa-magic"></i> 开始预测
+                        </button>
+                    </div>
+                </div>
+
+                <div class="prediction-results" id="prediction-results" style="display: none;">
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <div class="card-icon trend-up">
+                                <i class="fas fa-arrow-trend-up"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3>预测趋势</h3>
+                                <p class="result-value" id="trend-result">--</p>
+                                <span class="result-label">置信度: <span id="confidence">--</span></span>
+                            </div>
+                        </div>
+                        <div class="result-card">
+                            <div class="card-icon price">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3>目标价位</h3>
+                                <p class="result-value" id="target-price">--</p>
+                                <span class="result-label">当前价格: <span id="current-price">--</span></span>
+                            </div>
+                        </div>
+                        <div class="result-card">
+                            <div class="card-icon risk">
+                                <i class="fas fa-shield-halved"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3>风险评估</h3>
+                                <p class="result-value" id="risk-level">--</p>
+                                <span class="result-label">建议持仓: <span id="position">--</span></span>
+                            </div>
+                        </div>
+                        <div class="result-card">
+                            <div class="card-icon advice">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="card-content">
+                                <h3>操作建议</h3>
+                                <p class="result-value" id="advice">--</p>
+                                <span class="result-label">更新时间: <span id="update-time">--</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-section">
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-line"></i> 价格走势图</h3>
+                            <canvas id="price-chart"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3><i class="fas fa-chart-bar"></i> 技术指标</h3>
+                            <canvas id="indicator-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="analysis-details">
+                        <div class="details-card">
+                            <h3><i class="fas fa-info-circle"></i> 详细分析</h3>
+                            <div id="analysis-content">
+                                <p>加载中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Watchlist Page -->
+            <div class="page" id="watchlist-page">
+                <div class="page-header">
+                    <h1>观测池管理</h1>
+                    <button class="btn btn-primary" id="add-to-watchlist-btn">
+                        <i class="fas fa-plus"></i> 添加股票
+                    </button>
+                </div>
+
+                <div class="watchlist-grid" id="watchlist-grid">
+                    <div class="watchlist-item">
+                        <div class="stock-info">
+                            <h3>000001 <span class="stock-name">平安银行</span></h3>
+                            <p class="stock-price up">¥15.68 <span>+2.3%</span></p>
+                        </div>
+                        <div class="stock-actions">
+                            <button class="btn-icon" title="查看详情"><i class="fas fa-eye"></i></button>
+                            <button class="btn-icon" title="设置预警"><i class="fas fa-bell"></i></button>
+                            <button class="btn-icon danger" title="移除"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="watchlist-item">
+                        <div class="stock-info">
+                            <h3>600000 <span class="stock-name">浦发银行</span></h3>
+                            <p class="stock-price down">¥8.92 <span>-1.1%</span></p>
+                        </div>
+                        <div class="stock-actions">
+                            <button class="btn-icon" title="查看详情"><i class="fas fa-eye"></i></button>
+                            <button class="btn-icon" title="设置预警"><i class="fas fa-bell"></i></button>
+                            <button class="btn-icon danger" title="移除"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Page -->
+            <div class="page" id="history-page">
+                <div class="page-header">
+                    <h1>历史预测记录</h1>
+                    <div class="filter-group">
+                        <select id="history-filter">
+                            <option value="all">全部记录</option>
+                            <option value="accurate">预测准确</option>
+                            <option value="inaccurate">预测偏差</option>
+                        </select>
+                        <button class="btn btn-secondary" id="export-history-btn">
+                            <i class="fas fa-download"></i> 导出
+                        </button>
+                    </div>
+                </div>
+
+                <div class="history-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>股票代码</th>
+                                <th>预测类型</th>
+                                <th>预测值</th>
+                                <th>实际值</th>
+                                <th>准确度</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-tbody">
+                            <tr>
+                                <td>2026-01-30</td>
+                                <td>000001</td>
+                                <td>短期</td>
+                                <td class="up">+2.5%</td>
+                                <td class="up">+2.3%</td>
+                                <td><span class="badge success">92%</span></td>
+                                <td>
+                                    <button class="btn-icon" title="查看详情"><i class="fas fa-eye"></i></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>2026-01-29</td>
+                                <td>600000</td>
+                                <td>短期</td>
+                                <td class="down">-1.0%</td>
+                                <td class="down">-1.1%</td>
+                                <td><span class="badge success">95%</span></td>
+                                <td>
+                                    <button class="btn-icon" title="查看详情"><i class="fas fa-eye"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analysis Page -->
+            <div class="page" id="analysis-page">
+                <div class="page-header">
+                    <h1>技术分析</h1>
+                    <p>深度技术指标分析</p>
+                </div>
+
+                <div class="analysis-section">
+                    <div class="input-card">
+                        <div class="input-group">
+                            <label for="analysis-stock-code">股票代码</label>
+                            <input type="text" id="analysis-stock-code" placeholder="例如: 000001" />
+                        </div>
+                        <button class="btn btn-primary" id="analyze-btn">
+                            <i class="fas fa-chart-line"></i> 开始分析
+                        </button>
+                    </div>
+
+                    <div class="indicators-grid">
+                        <div class="indicator-card">
+                            <h3>MACD</h3>
+                            <div class="indicator-value">
+                                <span class="value">0.15</span>
+                                <span class="signal up">买入信号</span>
+                            </div>
+                        </div>
+                        <div class="indicator-card">
+                            <h3>RSI</h3>
+                            <div class="indicator-value">
+                                <span class="value">65.3</span>
+                                <span class="signal neutral">中性</span>
+                            </div>
+                        </div>
+                        <div class="indicator-card">
+                            <h3>布林带</h3>
+                            <div class="indicator-value">
+                                <span class="value">中轨</span>
+                                <span class="signal neutral">观望</span>
+                            </div>
+                        </div>
+                        <div class="indicator-card">
+                            <h3>KDJ</h3>
+                            <div class="indicator-value">
+                                <span class="value">45.2</span>
+                                <span class="signal down">卖出信号</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div class="page" id="settings-page">
+                <div class="page-header">
+                    <h1>系统设置</h1>
+                </div>
+
+                <div class="settings-section">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-paint-brush"></i> 界面设置</h3>
+                        <div class="setting-item">
+                            <label>主题模式</label>
+                            <select id="theme-select">
+                                <option value="auto">自动</option>
+                                <option value="light">浅色</option>
+                                <option value="dark">深色</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>语言</label>
+                            <select>
+                                <option value="zh">简体中文</option>
+                                <option value="en">English</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-database"></i> 数据设置</h3>
+                        <div class="setting-item">
+                            <label>数据源</label>
+                            <select>
+                                <option value="akshare">AKShare</option>
+                                <option value="tushare">TuShare</option>
+                                <option value="both">双源</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>更新频率</label>
+                            <select>
+                                <option value="realtime">实时</option>
+                                <option value="5min">5分钟</option>
+                                <option value="15min">15分钟</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-bell"></i> 通知设置</h3>
+                        <div class="setting-item">
+                            <label>价格预警</label>
+                            <label class="switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>预测完成通知</label>
+                            <label class="switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <p>分析中...</p>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
