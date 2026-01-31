@@ -230,9 +230,21 @@ def health_check():
     })
 
 
-def run_server(host='127.0.0.1', port=5000, debug=True):
-    """Run the Flask development server"""
+def run_server(host='127.0.0.1', port=5000, debug=False):
+    """
+    Run the Flask development server
+    
+    Args:
+        host: Host to bind to (default: 127.0.0.1)
+        port: Port to bind to (default: 5000)
+        debug: Enable debug mode (default: False for security)
+    
+    Warning:
+        Never enable debug mode in production as it allows arbitrary code execution
+    """
     logger.info(f"Starting SIAPS Web UI Server on http://{host}:{port}")
+    if debug:
+        logger.warning("Debug mode is enabled - do NOT use in production!")
     app.run(host=host, port=port, debug=debug)
 
 
