@@ -5,6 +5,41 @@
 
 **Stock Intelligent Analysis & Prediction System (SIAPS)** - 一个基于机器学习和深度学习的股票分析预测系统。
 
+---
+
+## ⚡ 快速启动 | Quick Start
+
+### 🌐 启动新的Web界面（推荐）
+
+**最简单的方法：**
+
+#### Windows用户：
+双击运行 **`启动Web界面.bat`** 或 **`START_WEB_UI.bat`**
+
+#### 命令行：
+```bash
+pip install Flask Flask-CORS
+python run_web_ui.py
+```
+
+浏览器会自动打开 http://127.0.0.1:5000
+
+### 🖥️ 启动桌面版（传统界面）
+
+#### Windows用户：
+双击运行 **`启动桌面版.bat`**
+
+#### 命令行：
+```bash
+python main.py
+```
+
+> 💡 **注意**: `main.py` 是旧的桌面版，`run_web_ui.py` 是新的现代化Web界面
+
+📖 **详细启动说明**: 请查看 [如何启动.md](如何启动.md)
+
+---
+
 ## 📋 项目概述
 
 SIAPS是一个功能强大的股票智能分析预测系统，通过多维度数据分析提供短期(1天)和中长期(3个月)股票走势预测，并给出具体交易建议。
@@ -94,14 +129,27 @@ cp .env.example .env
 
 5. **运行应用**
 
-```bash
-# 方式一：运行桌面版 (CustomTkinter GUI)
-python main.py
+**选择一个界面启动：**
 
-# 方式二：运行 Web 版 (推荐)
+#### 🌐 Web界面（推荐 - 新的现代化界面）
+```bash
+# Windows: 双击 启动Web界面.bat 或运行以下命令
+pip install Flask Flask-CORS
 python run_web_ui.py
-# 然后在浏览器中访问 http://127.0.0.1:5000
+# 浏览器自动打开 http://127.0.0.1:5000
 ```
+
+#### 🖥️ 桌面版（传统CustomTkinter界面）
+```bash
+# Windows: 双击 启动桌面版.bat 或运行以下命令
+python main.py
+```
+
+> 💡 **重要提示**: 
+> - `main.py` = 旧的桌面版界面
+> - `run_web_ui.py` = **新的Web界面**（这就是issue中要求的新UI！）
+> 
+> 详细说明请查看 [如何启动.md](如何启动.md)
 
 ## 🌐 Web UI 界面
 
