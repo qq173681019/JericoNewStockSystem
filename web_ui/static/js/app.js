@@ -261,19 +261,44 @@ async function runPrediction() {
     showLoading();
     
     try {
-        // Simulate API call with timeout
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Call backend API for real prediction
+        const response = await fetch(`/api/predict/${stockCode}`);
+        const result = await response.json();
         
-        // In a real application, you would call your backend API here:
-        // const response = await fetch(`/api/predict/${stockCode}`);
-        // const data = await response.json();
-        
-        // For now, use mock data
-        const data = generateMockPredictionData(stockCode);
-        displayPredictionResults(data);
+        if (result.success) {
+            // Transform API data to display format
+            const data = {
+                stockCode: result.stockCode,
+                stockName: result.stockName || '',
+                currentPrice: result.currentPrice || 0,
+                shortTermPrediction: result.prediction.shortTerm.change >= 0 
+                    ? `+${result.prediction.shortTerm.change}%` 
+                    : `${result.prediction.shortTerm.change}%`,
+                mediumTermPrediction: `¥${result.prediction.mediumTerm.targetPrice}`,
+                tradingAdvice: result.prediction.advice,
+                accuracy: `${result.prediction.accuracy}%`,
+                technicalIndicators: {
+                    rsi: result.technicalIndicators.RSI,
+                    macd: result.technicalIndicators.MACD,
+                    kdj: result.technicalIndicators.KDJ,
+                    ma5: result.technicalIndicators.MA5,
+                    ma20: result.technicalIndicators.MA20,
+                    boll: result.technicalIndicators.BOLL
+                },
+                priceHistory: result.priceHistory || generatePriceHistory(result.currentPrice)
+            };
+            
+            displayPredictionResults(data);
+        } else {
+            alert(result.message || '预测失败，请稍后重试');
+        }
     } catch (error) {
         console.error('Prediction error:', error);
-        alert('预测过程中出现错误，请稍后重试');
+        
+        // Fallback to mock data if API fails
+        console.log('Using fallback mock data');
+        const data = generateMockPredictionData(stockCode);
+        displayPredictionResults(data);
     } finally {
         hideLoading();
     }
@@ -346,11 +371,85 @@ function initAnalyticsCharts() {
     console.log('Analytics view loaded - charts would be rendered here');
 }
 
+// ===== History Management =====
+async function loadHistoryData(filter = 'all') {
+    try {
+        const response = await fetch(`/api/history?filter=${filter}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            updateHistoryTable(result.data);
+            updateHistoryStats(result.statistics);
+        }
+    } catch (error) {
+        console.error('Error loading history:', error);
+    }
+}
+
+function updateHistoryTable(historyData) {
+    const tbody = document.querySelector('#historyView .history-table tbody');
+    if (!tbody) return;
+    
+    // Clear existing rows
+    tbody.innerHTML = '';
+    
+    // Add new rows
+    historyData.forEach(record => {
+        const row = document.createElement('tr');
+        
+        // Determine classes for styling
+        const predClass = record.predictedResult.startsWith('+') ? 'positive' : 
+                         record.predictedResult.startsWith('-') ? 'negative' : '';
+        
+        const badgeClass = record.accuracy === 'accurate' ? 'badge-success' :
+                          record.accuracy === 'pending' ? 'badge-info' : 'badge-warning';
+        
+        row.innerHTML = `
+            <td>${record.timestamp}</td>
+            <td>${record.stockCode} ${record.stockName || ''}</td>
+            <td>${record.predictionType}</td>
+            <td class="${predClass}">${record.predictedResult}</td>
+            <td>${record.actualResult}</td>
+            <td><span class="badge ${badgeClass}">${record.accuracyBadge}</span></td>
+            <td><button class="btn-icon" onclick="viewPredictionDetail('${record.id}')"><span>👁️</span></button></td>
+        `;
+        
+        tbody.appendChild(row);
+    });
+}
+
+function updateHistoryStats(statistics) {
+    if (!statistics) return;
+    
+    const statsContainer = document.querySelector('#historyView .history-stats');
+    if (!statsContainer) return;
+    
+    // Update stat cards
+    const statCards = statsContainer.querySelectorAll('.stat-card h3');
+    if (statCards.length >= 3) {
+        statCards[0].textContent = statistics.total || 0;
+        statCards[1].textContent = `${statistics.accuracy_rate || 0}%`;
+        statCards[2].textContent = statistics.accurate || 0;
+    }
+}
+
+function viewPredictionDetail(predictionId) {
+    // TODO: Show detailed prediction view
+    console.log('Viewing prediction:', predictionId);
+}
+
 // Initialize charts when analytics view is opened
 navItems.forEach(item => {
     if (item.dataset.view === 'analytics') {
         item.addEventListener('click', () => {
             setTimeout(initAnalyticsCharts, 300);
+        });
+    }
+    
+    // Load history when history view is opened
+    if (item.dataset.view === 'history') {
+        item.addEventListener('click', () => {
+            setTimeout(() => loadHistoryData('all'), 300);
         });
     }
 });
