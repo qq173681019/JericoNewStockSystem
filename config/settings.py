@@ -4,10 +4,14 @@ Configuration module
 """
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+# Try to load environment variables, but don't fail if dotenv is not installed
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    print("Warning: python-dotenv not installed. Using default configuration.")
+    print("To install: pip install python-dotenv")
 
 # Project root directory
 ROOT_DIR = Path(__file__).parent.parent.parent
