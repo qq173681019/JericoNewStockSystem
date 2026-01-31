@@ -5,6 +5,8 @@ Lightweight Flask server to serve the modern web interface
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 import sys
+import os
+import secrets
 from pathlib import Path
 
 # Add project root to path
@@ -22,7 +24,8 @@ app = Flask(__name__,
 CORS(app)
 
 # Configure Flask
-app.config['SECRET_KEY'] = 'siaps-web-ui-secret-key'
+# Use environment variable for secret key, or generate a random one for development
+app.config['SECRET_KEY'] = os.environ.get('FLASK_SECRET_KEY') or secrets.token_hex(32)
 app.config['JSON_AS_ASCII'] = False  # Support Chinese characters
 
 
