@@ -157,3 +157,18 @@ def get_data_fetcher(source: str = "akshare") -> Optional[DataFetcher]:
     else:
         logger.error(f"Unsupported data source: {source}")
         return None
+
+
+def get_multi_source_fetcher():
+    """
+    Get multi-source data fetcher with automatic fallback
+    
+    Returns:
+        MultiSourceDataFetcher: Multi-source fetcher instance
+    """
+    try:
+        from src.data_acquisition.multi_source_fetcher import MultiSourceDataFetcher
+        return MultiSourceDataFetcher()
+    except ImportError as e:
+        logger.error(f"Failed to import MultiSourceDataFetcher: {str(e)}")
+        return None
