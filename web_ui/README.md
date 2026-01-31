@@ -70,8 +70,7 @@ python run_web_ui.py
 - **HTML5**: 语义化标签，结构清晰
 - **CSS3**: 现代CSS特性（Grid、Flexbox、CSS Variables）
 - **JavaScript (ES6+)**: 原生JavaScript，无框架依赖
-- **Chart.js**: 数据可视化图表库
-- **Font Awesome**: 图标库
+- **Canvas API**: 原生图表绘制，无需外部库
 
 ### 后端
 - **Flask**: 轻量级Python Web框架
@@ -226,7 +225,7 @@ GET /api/history
 **解决方案**: 检查静态文件路径配置，清除浏览器缓存
 
 ### 问题：图表不显示
-**解决方案**: 确保网络连接正常，Chart.js CDN可访问
+**解决方案**: 图表使用原生Canvas绘制。检查浏览器控制台是否有JavaScript错误
 
 ## 🚀 未来计划
 

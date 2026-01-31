@@ -320,8 +320,8 @@ function addToWatchlist(stockCode) {
         <td>¥${mockData.targetPrice}</td>
         <td><span class="badge badge-success">正常</span></td>
         <td>
-            <button class="btn-icon" title="详情"><i class="fas fa-info-circle"></i></button>
-            <button class="btn-icon" title="删除" onclick="this.closest('tr').remove()"><i class="fas fa-trash"></i></button>
+            <button class="btn-icon" title="详情"><span>ℹ️</span></button>
+            <button class="btn-icon" title="删除" onclick="this.closest('tr').remove()"><span>🗑️</span></button>
         </td>
     `;
     

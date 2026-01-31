@@ -161,7 +161,7 @@ python run_web_ui.py
 - **GUI框架**: 
   - CustomTkinter（桌面版）
   - Flask + HTML/CSS/JS（Web版）
-- **前端可视化**: 原生HTML5 Canvas，无外部依赖
+- **前端可视化**: 原生HTML5 Canvas, 无外部依赖
 - **数据获取**: AKShare, TuShare
 - **数据处理**: Pandas, NumPy
 - **机器学习**: Scikit-learn
