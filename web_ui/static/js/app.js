@@ -178,15 +178,39 @@ function updatePriceChart(historyData) {
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const width = canvas.width = canvas.offsetWidth;
+    
+    // Get parent container width or use default
+    const container = canvas.parentElement;
+    const containerWidth = container ? container.offsetWidth : 800;
+    const width = canvas.width = containerWidth > 0 ? containerWidth : 800;
     const height = canvas.height = 300;
     
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
     
+    // Check if we have valid data
+    if (!historyData || !historyData.data || historyData.data.length === 0) {
+        // Draw "No data" message
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.font = '16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无历史数据 / No historical data available', width / 2, height / 2);
+        return;
+    }
+    
     // Get data points
     const data = historyData.data.map(v => parseFloat(v));
     const labels = historyData.labels;
+    
+    // Validate data
+    if (data.some(isNaN) || data.length === 0) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.font = '16px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('数据格式错误 / Invalid data format', width / 2, height / 2);
+        return;
+    }
+    
     const maxValue = Math.max(...data);
     const minValue = Math.min(...data);
     const range = maxValue - minValue || 1;
