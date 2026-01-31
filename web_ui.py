@@ -29,7 +29,8 @@ def main():
     print()
     
     try:
-        run_web_server(host='127.0.0.1', port=5000, debug=True)
+        # Use None to let run_web_server use the DEBUG setting from config
+        run_web_server(host='127.0.0.1', port=5000, debug=None)
     except KeyboardInterrupt:
         print("\n\n👋 Shutting down server...")
         logger.info("Server stopped by user")

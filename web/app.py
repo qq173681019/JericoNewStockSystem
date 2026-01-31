@@ -5,13 +5,14 @@ Flask web server for the beautiful UI interface
 from flask import Flask, render_template, jsonify, request
 from pathlib import Path
 import sys
+import os
 
 # Add project root to Python path
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 from src.utils import setup_logger, validate_stock_code
-from config.settings import APP_NAME, APP_VERSION
+from config.settings import APP_NAME, APP_VERSION, DEBUG
 
 app = Flask(__name__, 
             template_folder='templates',
@@ -92,9 +93,23 @@ def server_error(e):
     return jsonify({'error': 'Internal server error'}), 500
 
 
-def run_web_server(host='127.0.0.1', port=5000, debug=True):
-    """Run the Flask web server"""
+def run_web_server(host='127.0.0.1', port=5000, debug=None):
+    """Run the Flask web server
+    
+    Args:
+        host: Host to bind to
+        port: Port to bind to
+        debug: Debug mode (defaults to DEBUG setting from config)
+    """
+    if debug is None:
+        debug = DEBUG
+    
     logger.info(f"Starting SIAPS Web Server on http://{host}:{port}")
+    logger.info(f"Debug mode: {'enabled' if debug else 'disabled'}")
+    
+    if debug:
+        logger.warning("⚠️  Debug mode is enabled. DO NOT use in production!")
+    
     app.run(host=host, port=port, debug=debug)
 
 

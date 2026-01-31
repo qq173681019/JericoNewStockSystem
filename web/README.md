@@ -156,10 +156,59 @@ web/
 
 ## 注意事项
 
+### 开发环境
 1. 当前版本使用模拟数据进行演示
 2. 预测功能需要集成实际的 ML 模型才能返回真实结果
-3. 建议在生产环境中使用 HTTPS
-4. 生产部署建议使用 Gunicorn 或 uWSGI
+3. 默认运行在调试模式（DEBUG=True），支持热重载
+
+### 生产环境部署
+
+⚠️ **重要**: 不要在生产环境中使用调试模式！
+
+#### 1. 配置环境变量
+编辑 `.env` 文件，设置：
+```
+DEBUG=False
+```
+
+#### 2. 使用生产级 WSGI 服务器
+
+**使用 Gunicorn**:
+```bash
+pip install gunicorn
+gunicorn -w 4 -b 0.0.0.0:5000 web.app:app
+```
+
+**使用 uWSGI**:
+```bash
+pip install uwsgi
+uwsgi --http 0.0.0.0:5000 --wsgi-file web/app.py --callable app --processes 4
+```
+
+#### 3. 配置 Nginx 反向代理
+
+```nginx
+server {
+    listen 80;
+    server_name your-domain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location /static {
+        alias /path/to/JericoNewStockSystem/web/static;
+    }
+}
+```
+
+#### 4. 启用 HTTPS
+使用 Let's Encrypt 获取免费 SSL 证书：
+```bash
+sudo certbot --nginx -d your-domain.com
+```
 
 ## 截图
 
