@@ -304,9 +304,13 @@ def get_history():
                         accuracy_status = 'pending'
                         accuracy_badge = '待验证'
                     
+                    timestamp_str = record.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                    timestamp_obj = record.created_at
+                    
                     history_data.append({
                         'id': record.id,
-                        'timestamp': record.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        'timestamp': timestamp_str,
+                        'timestamp_obj': timestamp_obj,  # Store parsed datetime for filtering
                         'stockCode': record.stock_code,
                         'stockName': record.stock_name or '',
                         'predictionType': pred_type_display,
@@ -317,16 +321,20 @@ def get_history():
                         'confidence': record.confidence_score or 0
                     })
                 
-                # Apply filters
+                # Apply filters using pre-parsed timestamps
                 if filter_type == 'today':
                     today = datetime.now().date()
-                    history_data = [h for h in history_data if datetime.strptime(h['timestamp'], '%Y-%m-%d %H:%M:%S').date() == today]
+                    history_data = [h for h in history_data if h['timestamp_obj'].date() == today]
                 elif filter_type == 'week':
                     week_ago = datetime.now() - timedelta(days=7)
-                    history_data = [h for h in history_data if datetime.strptime(h['timestamp'], '%Y-%m-%d %H:%M:%S') >= week_ago]
+                    history_data = [h for h in history_data if h['timestamp_obj'] >= week_ago]
                 elif filter_type == 'month':
                     month_ago = datetime.now() - timedelta(days=30)
-                    history_data = [h for h in history_data if datetime.strptime(h['timestamp'], '%Y-%m-%d %H:%M:%S') >= month_ago]
+                    history_data = [h for h in history_data if h['timestamp_obj'] >= month_ago]
+                
+                # Remove timestamp_obj before returning (not JSON serializable)
+                for item in history_data:
+                    del item['timestamp_obj']
                 
                 # Calculate statistics
                 total_predictions = len(history_data)

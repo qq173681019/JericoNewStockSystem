@@ -167,7 +167,7 @@ class MultiSourceDataFetcher:
                         'code': stock_code,
                         'name': stock_info.get('f58', ''),
                         'price': float(stock_info.get('f43', 0)) / 100,  # Price in fen
-                        'change_pct': float(stock_info.get('f170', 0)) / 100,
+                        'change_pct': float(stock_info.get('f169', 0)) / 100,  # Using f169 for change percentage
                         'volume': float(stock_info.get('f47', 0)),
                         'timestamp': datetime.now().isoformat()
                     }

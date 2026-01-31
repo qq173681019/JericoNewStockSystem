@@ -295,7 +295,7 @@ async function runPrediction() {
                 stockCode: result.stockCode,
                 stockName: result.stockName || '',
                 currentPrice: result.currentPrice || 0,
-                shortTermPrediction: result.prediction.shortTerm.change >= 0 
+                shortTermPrediction: (result.prediction.shortTerm.change >= 0)
                     ? `+${result.prediction.shortTerm.change}%` 
                     : `${result.prediction.shortTerm.change}%`,
                 mediumTermPrediction: `¥${result.prediction.mediumTerm.targetPrice}`,
