@@ -26,7 +26,8 @@ class MultiSourceDataFetcher:
             'akshare': self._init_akshare(),
             'tushare': self._init_tushare(),
             'yahoo': self._init_yahoo(),
-            'eastmoney': self._init_eastmoney()
+            'eastmoney': self._init_eastmoney(),
+            'sina': self._init_sina()
         }
         self.available_sources = {k: v for k, v in self.sources.items() if v is not None}
         logger.info(f"Initialized with sources: {list(self.available_sources.keys())}")
@@ -63,15 +64,91 @@ class MultiSourceDataFetcher:
             return None
     
     def _init_eastmoney(self):
-        """Initialize EastMoney (via requests)"""
+        """Initialize EastMoney (via requests with no proxy)"""
         try:
             import requests
+            # Create a session that ignores proxies
+            session = requests.Session()
+            session.trust_env = False  # Don't use environment proxy settings
+            session.proxies = {'http': None, 'https': None}
             logger.info("✓ EastMoney initialized")
-            return requests
+            return session
         except ImportError:
             logger.warning("✗ EastMoney not available")
             return None
     
+    def _init_sina(self):
+        """Initialize Sina Finance (via requests)"""
+        try:
+            import requests
+            # Create a session for Sina
+            session = requests.Session()
+            session.headers.update({
+                'Referer': 'https://finance.sina.com.cn',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            })
+            logger.info("✓ Sina Finance initialized")
+            return session
+        except ImportError:
+            logger.warning("✗ Sina Finance not available")
+            return None
+    
+    def fetch_from_sina(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """Fetch real-time data from Sina Finance API"""
+        if 'sina' not in self.available_sources:
+            return None
+        
+        try:
+            session = self.available_sources['sina']
+            
+            # Determine market prefix: sh for Shanghai, sz for Shenzhen
+            if stock_code.startswith('6'):
+                symbol = f'sh{stock_code}'
+            else:
+                symbol = f'sz{stock_code}'
+            
+            url = f'https://hq.sinajs.cn/list={symbol}'
+            response = session.get(url, timeout=10)
+            
+            if response.status_code == 200:
+                text = response.text
+                # Parse: var hq_str_sh601606="长城军工,45.510,45.360,45.710,..."
+                if '="' in text and text.strip().endswith('";'):
+                    data_str = text.split('="')[1].rstrip('";')
+                    parts = data_str.split(',')
+                    
+                    if len(parts) >= 32:
+                        name = parts[0]
+                        open_price = float(parts[1]) if parts[1] else 0
+                        yesterday_close = float(parts[2]) if parts[2] else 0
+                        current_price = float(parts[3]) if parts[3] else 0
+                        high = float(parts[4]) if parts[4] else 0
+                        low = float(parts[5]) if parts[5] else 0
+                        volume = float(parts[8]) if parts[8] else 0
+                        
+                        # Calculate change percentage
+                        change_pct = 0
+                        if yesterday_close > 0:
+                            change_pct = round((current_price - yesterday_close) / yesterday_close * 100, 2)
+                        
+                        return {
+                            'source': 'sina',
+                            'code': stock_code,
+                            'name': name,
+                            'price': current_price,
+                            'change_pct': change_pct,
+                            'volume': volume,
+                            'high': high,
+                            'low': low,
+                            'open': open_price,
+                            'yesterday_close': yesterday_close,
+                            'timestamp': datetime.now().isoformat()
+                        }
+        except Exception as e:
+            logger.error(f"Sina fetch error for {stock_code}: {str(e)}")
+        
+        return None
+
     def fetch_from_akshare(self, stock_code: str) -> Optional[Dict[str, Any]]:
         """Fetch real-time data from AKShare"""
         if 'akshare' not in self.available_sources:
@@ -144,35 +221,89 @@ class MultiSourceDataFetcher:
             return None
         
         try:
-            requests = self.available_sources['eastmoney']
+            requests_lib = self.available_sources['eastmoney']
             
-            # EastMoney API endpoint
-            market_code = '1' if stock_code.startswith('6') else '0'
+            # Determine market code: 1=Shanghai, 0=Shenzhen
+            if stock_code.startswith('6'):
+                market_code = '1'
+            elif stock_code.startswith(('0', '3')):
+                market_code = '0'
+            else:
+                market_code = '0'
+            
             secid = f"{market_code}.{stock_code}"
             
-            url = f"http://push2.eastmoney.com/api/qt/stock/get"
+            # Use the stock quote API
+            url = "http://push2.eastmoney.com/api/qt/stock/get"
             params = {
                 'secid': secid,
-                'fields': 'f43,f44,f45,f46,f47,f48,f49,f50,f51,f52,f57,f58'
+                'ut': 'bd1d9ddb04089700cf9c27f6f7426281',
+                'fields': 'f43,f44,f45,f46,f47,f48,f49,f50,f51,f52,f57,f58,f59,f60,f169,f170,f171'
             }
             
-            response = requests.get(url, params=params, timeout=5)
+            response = requests_lib.get(url, params=params, timeout=10)
             
             if response.status_code == 200:
                 data = response.json()
                 if data.get('data'):
                     stock_info = data['data']
+                    # f43=current price (in fen), f58=name, f170=change percent
+                    price_raw = stock_info.get('f43', 0)
+                    change_raw = stock_info.get('f170', 0)
+                    
+                    # Handle the price (stored in fen, need to convert to yuan)
+                    if price_raw and price_raw != '-':
+                        price = float(price_raw) / 100
+                    else:
+                        price = 0
+                    
+                    # Change percent
+                    if change_raw and change_raw != '-':
+                        change_pct = float(change_raw) / 100
+                    else:
+                        change_pct = 0
+                    
                     return {
                         'source': 'eastmoney',
                         'code': stock_code,
                         'name': stock_info.get('f58', ''),
-                        'price': float(stock_info.get('f43', 0)) / 100,  # Price in fen
-                        'change_pct': float(stock_info.get('f169', 0)) / 100,  # Using f169 for change percentage
-                        'volume': float(stock_info.get('f47', 0)),
+                        'price': price,
+                        'change_pct': change_pct,
+                        'volume': float(stock_info.get('f47', 0) or 0),
+                        'high': float(stock_info.get('f44', 0) or 0) / 100,
+                        'low': float(stock_info.get('f45', 0) or 0) / 100,
+                        'open': float(stock_info.get('f46', 0) or 0) / 100,
                         'timestamp': datetime.now().isoformat()
                     }
         except Exception as e:
             logger.error(f"EastMoney fetch error for {stock_code}: {str(e)}")
+        
+        return None
+    
+    def fetch_stock_realtime(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """
+        Fetch real-time stock data using multiple sources with fallback
+        This is the preferred method for getting single stock data
+        """
+        # Try Sina first (most reliable, no proxy issues)
+        result = self.fetch_from_sina(stock_code)
+        if result and result.get('price', 0) > 0:
+            return result
+        
+        # Fallback to EastMoney
+        result = self.fetch_from_eastmoney(stock_code)
+        if result and result.get('price', 0) > 0:
+            return result
+        
+        # Fallback to AKShare
+        result = self.fetch_from_akshare(stock_code)
+        if result and result.get('price', 0) > 0:
+            return result
+        
+        # Fallback to Yahoo Finance (for international)
+        result = self.fetch_from_yahoo(stock_code)
+        if result and result.get('price', 0) > 0:
+            return result
         
         return None
     
@@ -191,7 +322,140 @@ class MultiSourceDataFetcher:
         
         return {k: v for k, v in results.items() if v is not None}
     
+    def fetch_sector_data(self, limit: int = 6) -> List[Dict[str, Any]]:
+        """
+        Fetch real-time sector data from TongHuaShun (同花顺) via AKShare
+        Falls back to EastMoney if TongHuaShun is unavailable
+        
+        Args:
+            limit: Number of top sectors to return
+            
+        Returns:
+            List of sector dictionaries sorted by change percentage
+        """
+        # Try TongHuaShun first (more accurate real-time data)
+        result = self._fetch_sector_from_ths(limit)
+        if result:
+            return result
+            
+        # Fallback to EastMoney
+        logger.warning("TongHuaShun data unavailable, falling back to EastMoney")
+        return self._fetch_sector_from_eastmoney(limit)
+    
+    def _fetch_sector_from_ths(self, limit: int) -> List[Dict[str, Any]]:
+        """Fetch sector data from TongHuaShun via AKShare with retry"""
+        if 'akshare' not in self.available_sources:
+            return []
+        
+        import time
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                ak = self.available_sources['akshare']
+                # Use stock_board_industry_summary_ths for real-time data
+                df = ak.stock_board_industry_summary_ths()
+                
+                if df is None or df.empty:
+                    if attempt < max_retries - 1:
+                        time.sleep(0.5)
+                        continue
+                    return []
+                
+                result = []
+                for idx, row in df.head(limit).iterrows():
+                    try:
+                        # Get change percentage
+                        change = float(row.get('涨跌幅', 0))
+                        
+                        # Calculate heat (0-100)
+                        heat = min(100, max(0, 50 + change * 5))
+                        
+                        # Get stock counts
+                        rising = int(row.get('上涨家数', 0) or 0)
+                        falling = int(row.get('下跌家数', 0) or 0)
+                        
+                        # Get leading stock
+                        leading_stock = row.get('领涨股', '')
+                        
+                        result.append({
+                            'name': row.get('板块', '未知板块'),
+                            'heat': int(heat),
+                            'stocks': rising + falling,
+                            'change': round(change, 2),
+                            'topCompanies': [leading_stock] if leading_stock else [],
+                            'code': '',  # THS doesn't return code in summary
+                            'source': 'tonghuashun'
+                        })
+                    except (ValueError, TypeError) as e:
+                        continue
+                
+                if result:
+                    logger.info(f"✓ Fetched {len(result)} industry sectors from TongHuaShun")
+                    return result
+                    
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    time.sleep(0.5)
+                    continue
+                logger.warning(f"TongHuaShun sector fetch failed after {max_retries} attempts: {str(e)}")
+            return []
+    
+    def _fetch_sector_from_eastmoney(self, limit: int) -> List[Dict[str, Any]]:
+        """Fetch sector data from EastMoney API (fallback)"""
+        try:
+            url = "http://push2.eastmoney.com/api/qt/clist/get"
+            params = {
+                'pn': 1,
+                'pz': limit,
+                'po': 1,  # Descending sort (highest change first)
+                'np': 1,
+                'ut': 'bd1d9ddb04089700cf9c27f6f7426281',
+                'fltt': 2,
+                'invt': 2,
+                'fid': 'f3',  # Sort by f3 (Change Percent)
+                'fs': 'm:90 t:2',  # Market 90, Type 2 (Industry Board)
+                'fields': 'f12,f13,f14,f2,f3,f4,f104,f105,f128,f140,f136'
+            }
+            
+            if 'eastmoney' in self.available_sources:
+                requests_lib = self.available_sources['eastmoney']
+            else:
+                import requests
+                requests_lib = requests
+                
+            response = requests_lib.get(url, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data and data.get('data') and data['data'].get('diff'):
+                    result = []
+                    for item in data['data']['diff']:
+                        change = float(item.get('f3', 0))
+                        heat = min(100, max(0, 50 + change * 5))
+                        rising = int(item.get('f104', 0) or 0)
+                        falling = int(item.get('f105', 0) or 0)
+                        
+                        result.append({
+                            'name': item.get('f14', '未知板块'),
+                            'heat': int(heat),
+                            'stocks': rising + falling,
+                            'change': round(change, 2),
+                            'topCompanies': [item.get('f128', '')] if item.get('f128') else [],
+                            'code': item.get('f12', ''),
+                            'source': 'eastmoney'
+                        })
+                    
+                    logger.info(f"✓ Fetched {len(result)} industry sectors from EastMoney")
+                    return result
+                    
+        except Exception as e:
+            logger.error(f"EastMoney sector fetch error: {str(e)}")
+            
+        return []
+
     def compare_sources(self, stock_codes: List[str]) -> pd.DataFrame:
+
         """
         Compare data reliability across multiple sources for given stock codes
         

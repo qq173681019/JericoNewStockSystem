@@ -44,6 +44,33 @@ app.config['SECRET_KEY'] = 'siaps-secret-key-change-in-production'
 app.config['JSON_AS_ASCII'] = False  # Support Chinese characters in JSON
 
 
+# ===== Helper Functions =====
+def generate_demo_price_history(base_price: float, days: int = 30) -> dict:
+    """
+    Generate realistic demo price history for visualization
+    
+    Args:
+        base_price: Starting price point
+        days: Number of days to generate
+    
+    Returns:
+        dict with 'labels' and 'data' keys
+    """
+    price_history = {'labels': [], 'data': []}
+    current_price = base_price * 0.9
+    
+    for i in range(days, -1, -1):
+        date = datetime.now() - timedelta(days=i)
+        price_history['labels'].append(date.strftime('%m/%d'))
+        
+        # Add realistic price movement (±3% random walk)
+        current_price = current_price * (1 + (0.5 - (hash(f"{base_price}{i}") % 100) / 100) * 0.03)
+        price_history['data'].append(round(current_price, 2))
+    
+    logger.info(f"Generated demo price history: {len(price_history['data'])} points")
+    return price_history
+
+
 @app.route('/')
 def index():
     """Serve the main page"""
@@ -59,10 +86,10 @@ def predict_stock(stock_code):
     try:
         logger.info(f"Prediction requested for stock: {stock_code}")
         
-        # Fetch real-time data
+        # Fetch real-time data using the reliable method
         real_data = None
         if data_fetcher:
-            real_data = data_fetcher.get_best_source(stock_code)
+            real_data = data_fetcher.fetch_stock_realtime(stock_code)
         
         # Fetch historical data for chart
         historical_data = None
@@ -72,9 +99,14 @@ def predict_stock(stock_code):
             try:
                 end_date = datetime.now().strftime('%Y-%m-%d')
                 start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+                logger.info(f"Fetching historical data from {start_date} to {end_date} for {stock_code}")
+                
                 historical_df = data_fetcher.fetch_historical_data(stock_code, start_date, end_date)
                 
-                if not historical_df.empty:
+                if historical_df is not None and not historical_df.empty:
+                    logger.info(f"Historical DataFrame columns: {historical_df.columns.tolist()}")
+                    logger.info(f"Historical DataFrame shape: {historical_df.shape}")
+                    
                     # Process historical data for chart
                     if '日期' in historical_df.columns:
                         # AKShare format
@@ -87,6 +119,7 @@ def predict_stock(stock_code):
                         price_history['data'] = [
                             float(p) for p in historical_df['收盘']
                         ]
+                        logger.info(f"✓ Processed AKShare format: {len(price_history['data'])} price points")
                     elif 'Close' in historical_df.columns:
                         # Yahoo Finance format
                         historical_df = historical_df.sort_index()
@@ -96,10 +129,19 @@ def predict_stock(stock_code):
                         price_history['data'] = [
                             float(p) for p in historical_df['Close']
                         ]
-                    
-                    logger.info(f"Historical data loaded: {len(price_history['data'])} points")
+                        logger.info(f"✓ Processed Yahoo format: {len(price_history['data'])} price points")
+                    else:
+                        logger.warning(f"Unknown data format. Available columns: {historical_df.columns.tolist()}")
+                else:
+                    logger.warning(f"Historical data is empty or None for {stock_code}")
             except Exception as e:
-                logger.error(f"Error fetching historical data: {str(e)}")
+                logger.error(f"Error fetching historical data: {str(e)}", exc_info=True)
+        
+        # If no price history, generate demo data for visualization
+        if not price_history['data']:
+            logger.info(f"Generating demo price history for {stock_code}")
+            base_price = 10 + (hash(stock_code) % 50)
+            price_history = generate_demo_price_history(base_price)
         
         # Generate prediction based on real data
         if real_data and price_history['data']:
@@ -130,6 +172,30 @@ def predict_stock(stock_code):
             # Confidence based on data quality
             confidence = 0.75 if len(recent_prices) >= 5 else 0.60
             accuracy = 78.5 + (confidence - 0.75) * 20
+            
+        elif price_history['data']:  # Only have demo data, not real data
+            base_price = price_history['data'][0]
+            current_price = price_history['data'][-1]
+            stock_name = ''
+            
+            # Calculate prediction based on demo data
+            recent_prices = price_history['data'][-5:]
+            price_trend = (recent_prices[-1] - recent_prices[0]) / recent_prices[0] * 100
+            short_term_change = price_trend * 0.5
+            medium_term_price = current_price * (1 + price_trend / 100 * 1.5)
+            
+            if short_term_change > 2:
+                advice = '买入'
+                direction = 'up'
+            elif short_term_change < -2:
+                advice = '卖出'
+                direction = 'down'
+            else:
+                advice = '持有'
+                direction = 'neutral'
+            
+            confidence = 0.60
+            accuracy = 75.0
             
         else:
             # Fallback to mock data if real data unavailable
@@ -213,51 +279,318 @@ def predict_stock(stock_code):
         }), 500
 
 
-@app.route('/api/watchlist', methods=['GET', 'POST'])
+@app.route('/api/watchlist', methods=['GET', 'POST', 'DELETE'])
 def manage_watchlist():
     """
     API endpoint for watchlist management
     GET: Retrieve watchlist
     POST: Add stock to watchlist
+    DELETE: Remove stock from watchlist
     """
     try:
         if request.method == 'GET':
-            # TODO: Retrieve watchlist from database
-            # For now, return mock data
-            watchlist = [
-                {
-                    'code': '000001',
-                    'name': '平安银行',
-                    'currentPrice': 12.45,
-                    'change': 2.3,
-                    'targetPrice': 13.50,
-                    'alert': 'normal'
-                },
-                {
-                    'code': '600036',
-                    'name': '招商银行',
-                    'currentPrice': 35.67,
-                    'change': -1.2,
-                    'targetPrice': 38.00,
-                    'alert': 'watch'
-                }
-            ]
+            # Retrieve watchlist from database
+            db_items = db_manager.get_watchlist()
+            watchlist = []
+            
+            for item in db_items:
+                # Get real-time price data for each stock
+                stock_data = None
+                if data_fetcher:
+                    try:
+                        # Use the new reliable method
+                        stock_data = data_fetcher.fetch_stock_realtime(item.stock_code)
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch data for {item.stock_code}: {e}")
+                
+                current_price = stock_data.get('price', 0) if stock_data else 0
+                change_pct = stock_data.get('change_pct', 0) if stock_data else 0
+                stock_name = item.stock_name or (stock_data.get('name') if stock_data else None) or f'股票{item.stock_code}'
+                
+                # Update stock name and target price in database if needed
+                needs_update = False
+                update_fields = {}
+                
+                if stock_data and stock_data.get('name') and not item.stock_name:
+                    update_fields['stock_name'] = stock_data.get('name')
+                    needs_update = True
+                
+                # Auto-set target price if empty and we have current price
+                target_price = item.target_price
+                if not target_price and current_price > 0:
+                    target_price = round(current_price * 1.1, 2)  # Default 10% above current
+                    update_fields['target_price'] = target_price
+                    needs_update = True
+                
+                if needs_update:
+                    try:
+                        db_manager.update_watchlist_item(item.stock_code, **update_fields)
+                    except Exception as e:
+                        logger.warning(f"Failed to update watchlist item {item.stock_code}: {e}")
+                
+                # Determine alert status
+                alert = 'normal'
+                if target_price and current_price >= target_price:
+                    alert = 'target'
+                elif item.stop_loss_price and current_price <= item.stop_loss_price:
+                    alert = 'stop_loss'
+                
+                watchlist.append({
+                    'code': item.stock_code,
+                    'name': stock_name,
+                    'currentPrice': current_price,
+                    'change': change_pct,
+                    'targetPrice': target_price or 0,
+                    'stopLoss': item.stop_loss_price or 0,
+                    'notes': item.notes or '',
+                    'createdAt': item.created_at.isoformat() if item.created_at else '',
+                    'alert': alert
+                })
+            
             return jsonify({'success': True, 'data': watchlist})
             
         elif request.method == 'POST':
             data = request.get_json()
-            stock_code = data.get('stockCode')
+            stock_code = data.get('stockCode', '').strip()
             
-            # TODO: Add to database
-            logger.info(f"Added {stock_code} to watchlist")
+            if not stock_code:
+                return jsonify({'success': False, 'error': '请输入股票代码'}), 400
+            
+            # Get real stock info using the reliable method
+            stock_name = None
+            current_price = None
+            change_pct = 0
+            
+            if data_fetcher:
+                try:
+                    stock_data = data_fetcher.fetch_stock_realtime(stock_code)
+                    if stock_data:
+                        stock_name = stock_data.get('name')
+                        current_price = stock_data.get('price')
+                        change_pct = stock_data.get('change_pct', 0)
+                        logger.info(f"Fetched stock data: {stock_code} - {stock_name}, price={current_price}, change={change_pct}%")
+                except Exception as e:
+                    logger.warning(f"Could not fetch stock data for {stock_code}: {e}")
+            
+            # Add to database
+            target_price = data.get('targetPrice')
+            if target_price:
+                target_price = float(target_price)
+            elif current_price:
+                target_price = round(current_price * 1.1, 2)  # Default 10% above current
+            
+            # Calculate target days based on price difference
+            target_days = data.get('targetDays')
+            if target_days:
+                target_days = int(target_days)
+            elif current_price and target_price:
+                # Estimate days: roughly 1% per day for small moves, slower for larger moves
+                price_diff_pct = abs((target_price - current_price) / current_price * 100)
+                if price_diff_pct <= 5:
+                    target_days = max(1, int(price_diff_pct * 2))  # 2-10 days for small moves
+                elif price_diff_pct <= 10:
+                    target_days = int(price_diff_pct * 3)  # 15-30 days for medium moves
+                else:
+                    target_days = min(90, int(price_diff_pct * 5))  # up to 90 days for large moves
+            
+            db_manager.add_to_watchlist(
+                stock_code=stock_code,
+                stock_name=stock_name,
+                target_price=target_price,
+                target_days=target_days,
+                notes=data.get('notes')
+            )
+            
+            logger.info(f"Added {stock_code} ({stock_name}) to watchlist")
             
             return jsonify({
                 'success': True,
-                'message': f'Stock {stock_code} added to watchlist'
+                'message': f'成功添加 {stock_code} {stock_name or ""} 到观测池',
+                'data': {
+                    'code': stock_code,
+                    'name': stock_name or f'股票{stock_code}',
+                    'currentPrice': current_price or 0,
+                    'change': change_pct,
+                    'targetPrice': target_price or 0,
+                    'targetDays': target_days or 0,
+                    'alert': 'normal'
+                }
             })
+        
+        elif request.method == 'DELETE':
+            data = request.get_json()
+            stock_code = data.get('stockCode', '').strip()
+            
+            if not stock_code:
+                return jsonify({'success': False, 'error': '请提供股票代码'}), 400
+            
+            success = db_manager.remove_from_watchlist(stock_code)
+            
+            if success:
+                logger.info(f"Removed {stock_code} from watchlist")
+                return jsonify({
+                    'success': True,
+                    'message': f'已从观测池移除 {stock_code}'
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': f'未找到股票 {stock_code}'
+                }), 404
             
     except Exception as e:
         logger.error(f"Watchlist error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/analytics', methods=['GET'])
+def get_analytics():
+    """
+    Get analytics data including sector heat and market sentiment
+    """
+    try:
+        logger.info("Analytics data requested")
+        
+        # Try to fetch real sector data
+        real_sectors = []
+        all_sectors = []  # For heatmap (all sectors)
+        if data_fetcher:
+            real_sectors = data_fetcher.fetch_sector_data(limit=6)
+            all_sectors = data_fetcher.fetch_sector_data(limit=100)  # Get all sectors for heatmap
+            
+        if real_sectors:
+            logger.info("Using real sector data")
+            # Enhance real data with colors
+            colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F']
+            sectors_info = []
+            
+            for i, sector in enumerate(real_sectors):
+                sector['color'] = colors[i % len(colors)]
+                # Ensure topCompanies is list
+                if not isinstance(sector['topCompanies'], list):
+                    sector['topCompanies'] = [sector['topCompanies']]
+                sectors_info.append(sector)
+                
+        else:
+            logger.warning("Using demo sector data (fetch failed or returned empty)")
+            # Fallback to demo data
+            sectors_info = [
+                {
+                    'name': '金融',
+                    'heat': 75 + (hash('金融') % 20),
+                    'stocks': 125,
+                    'change': 2.5,
+                    'topCompanies': ['中国平安', '中国银行', '工商银行'],
+                    'color': '#FF6B6B'
+                },
+                {
+                    'name': '医药',
+                    'heat': 65 + (hash('医药') % 25),
+                    'stocks': 98,
+                    'change': 1.8,
+                    'topCompanies': ['迈瑞医疗', '片仔癀', '科伦药业'],
+                    'color': '#4ECDC4'
+                },
+                {
+                    'name': '科技',
+                    'heat': 85 + (hash('科技') % 15),
+                    'stocks': 156,
+                    'change': 3.2,
+                    'topCompanies': ['腾讯', '阿里巴巴', '字节跳动'],
+                    'color': '#45B7D1'
+                },
+                {
+                    'name': '制造',
+                    'heat': 55 + (hash('制造') % 30),
+                    'stocks': 142,
+                    'change': -0.5,
+                    'topCompanies': ['比亚迪', '新能源汽车', '工程机械'],
+                    'color': '#FFA07A'
+                },
+                {
+                    'name': '消费',
+                    'heat': 70 + (hash('消费') % 20),
+                    'stocks': 134,
+                    'change': 2.1,
+                    'topCompanies': ['贵州茅台', '五粮液', '美团'],
+                    'color': '#98D8C8'
+                },
+                {
+                    'name': '能源',
+                    'heat': 45 + (hash('能源') % 35),
+                    'stocks': 87,
+                    'change': -1.2,
+                    'topCompanies': ['中国石油', '中国海油', '新能源'],
+                    'color': '#F7DC6F'
+                }
+            ]
+        
+        sectors_data = {
+            'labels': [s['name'] for s in sectors_info],
+            'data': [s['heat'] for s in sectors_info],
+            'colors': [s['color'] for s in sectors_info],
+            'details': sectors_info  # Include detailed information
+        }
+        
+        # Generate market sentiment data
+        # Sentiment scale: 0-20 Fear, 20-40 Very Negative, 40-60 Neutral, 60-80 Positive, 80-100 Greed
+        sentiment_value = 50 + (hash(str(datetime.now().date())) % 40 - 20)
+        
+        if sentiment_value < 20:
+            sentiment_level = '极度恐惧'
+            sentiment_color = '#FF4444'
+        elif sentiment_value < 40:
+            sentiment_level = '恐惧'
+            sentiment_color = '#FF8844'
+        elif sentiment_value < 60:
+            sentiment_level = '中立'
+            sentiment_color = '#FFCC44'
+        elif sentiment_value < 80:
+            sentiment_level = '乐观'
+            sentiment_color = '#88DD44'
+        else:
+            sentiment_level = '极度贪婪'
+            sentiment_color = '#44DD44'
+        
+        sentiment_data = {
+            'value': sentiment_value,
+            'level': sentiment_level,
+            'color': sentiment_color,
+            'history': [
+                {'date': (datetime.now() - timedelta(days=i)).strftime('%m/%d'), 
+                 'value': 50 + (hash(f"sentiment{i}") % 40 - 20)}
+                for i in range(30, -1, -1)
+            ]
+        }
+        
+        # Prepare all sectors data for heatmap
+        heatmap_data = []
+        for sector in all_sectors:
+            heatmap_data.append({
+                'name': sector.get('name', ''),
+                'change': sector.get('change', 0),
+                'heat': sector.get('heat', 50),
+                'stocks': sector.get('stocks', 0),
+                'source': sector.get('source', 'unknown')
+            })
+        
+        result = {
+            'success': True,
+            'sectorHeat': sectors_data,
+            'allSectors': heatmap_data,  # All sectors for heatmap
+            'marketSentiment': sentiment_data,
+            'timestamp': datetime.now().isoformat(),
+            'message': 'Analytics data retrieved successfully'
+        }
+        
+        logger.info(f"✓ Analytics data generated ({len(heatmap_data)} sectors)")
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Analytics error: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
             'error': str(e)
@@ -391,6 +724,32 @@ def get_history():
         logger.error(f"History error: {str(e)}")
         import traceback
         traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/history/clear', methods=['POST'])
+def clear_history():
+    """
+    API endpoint to clear all prediction history
+    """
+    try:
+        if db_manager:
+            count = db_manager.clear_prediction_history()
+            return jsonify({
+                'success': True,
+                'message': f'已清空 {count} 条历史记录',
+                'deleted_count': count
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': '数据库未初始化'
+            }), 500
+    except Exception as e:
+        logger.error(f"Clear history error: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)

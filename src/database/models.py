@@ -49,6 +49,7 @@ class Watchlist(Base):
     stock_code = Column(String(10), nullable=False, unique=True)
     stock_name = Column(String(50))
     target_price = Column(Float)
+    target_days = Column(Integer)  # Estimated days to reach target price
     stop_loss_price = Column(Float)
     stop_profit_price = Column(Float)
     notes = Column(Text)
@@ -122,7 +123,8 @@ class DatabaseManager:
             session.close()
     
     def add_to_watchlist(self, stock_code: str, stock_name: str = None,
-                         target_price: float = None, stop_loss_price: float = None,
+                         target_price: float = None, target_days: int = None,
+                         stop_loss_price: float = None,
                          stop_profit_price: float = None, notes: str = None):
         """
         Add a stock to watchlist
@@ -131,6 +133,7 @@ class DatabaseManager:
             stock_code: Stock code
             stock_name: Stock name
             target_price: Target price
+            target_days: Estimated days to reach target price
             stop_loss_price: Stop loss price
             stop_profit_price: Stop profit price
             notes: Additional notes
@@ -141,6 +144,7 @@ class DatabaseManager:
                 stock_code=stock_code,
                 stock_name=stock_name,
                 target_price=target_price,
+                target_days=target_days,
                 stop_loss_price=stop_loss_price,
                 stop_profit_price=stop_profit_price,
                 notes=notes
@@ -163,6 +167,61 @@ class DatabaseManager:
         finally:
             session.close()
     
+    def remove_from_watchlist(self, stock_code: str):
+        """
+        Remove a stock from watchlist
+        
+        Args:
+            stock_code: Stock code to remove
+            
+        Returns:
+            bool: True if removed, False if not found
+        """
+        session = self.get_session()
+        try:
+            item = session.query(Watchlist).filter(Watchlist.stock_code == stock_code).first()
+            if item:
+                session.delete(item)
+                session.commit()
+                logger.info(f"Removed {stock_code} from watchlist")
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error removing from watchlist: {str(e)}")
+            return False
+        finally:
+            session.close()
+    
+    def update_watchlist_item(self, stock_code: str, **kwargs):
+        """
+        Update a watchlist item
+        
+        Args:
+            stock_code: Stock code to update
+            **kwargs: Fields to update (stock_name, target_price, etc.)
+            
+        Returns:
+            bool: True if updated, False if not found
+        """
+        session = self.get_session()
+        try:
+            item = session.query(Watchlist).filter(Watchlist.stock_code == stock_code).first()
+            if item:
+                for key, value in kwargs.items():
+                    if hasattr(item, key):
+                        setattr(item, key, value)
+                session.commit()
+                logger.info(f"Updated {stock_code} in watchlist")
+                return True
+            return False
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error updating watchlist: {str(e)}")
+            return False
+        finally:
+            session.close()
+
     def get_prediction_history(self, stock_code: str = None, limit: int = 100):
         """
         Get prediction history
@@ -181,5 +240,25 @@ class DatabaseManager:
                 query = query.filter(PredictionHistory.stock_code == stock_code)
             query = query.order_by(PredictionHistory.created_at.desc()).limit(limit)
             return query.all()
+        finally:
+            session.close()
+    
+    def clear_prediction_history(self):
+        """
+        Clear all prediction history records
+        
+        Returns:
+            int: Number of deleted records
+        """
+        session = self.get_session()
+        try:
+            count = session.query(PredictionHistory).delete()
+            session.commit()
+            logger.info(f"Cleared {count} prediction history records")
+            return count
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error clearing prediction history: {str(e)}")
+            raise
         finally:
             session.close()

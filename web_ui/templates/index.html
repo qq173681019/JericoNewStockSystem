@@ -97,6 +97,16 @@
                         </div>
                         
                         <div class="prediction-results" id="predictionResults" style="display: none;">
+                            <div class="stock-info-header">
+                                <div class="stock-code-name">
+                                    <span class="stock-code" id="resultStockCode">--</span>
+                                    <span class="stock-name" id="resultStockName">--</span>
+                                    <span class="current-price" id="resultCurrentPrice">--</span>
+                                    <button class="btn btn-add-watchlist" id="addToWatchlistFromPrediction" title="添加到观测池">
+                                        <span>➕</span>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="results-grid">
                                 <div class="result-card">
                                     <div class="result-icon">
@@ -184,10 +194,16 @@
                 <div class="card">
                     <div class="card-header">
                         <h2>观测池管理</h2>
-                        <button class="btn btn-primary" id="addStockBtn">
-                            <span>➕</span>
-                            添加股票
-                        </button>
+                        <div class="header-buttons">
+                            <button class="btn btn-secondary" id="refreshWatchlistBtn">
+                                <span>🔄</span>
+                                刷新数据
+                            </button>
+                            <button class="btn btn-primary" id="addStockBtn">
+                                <span>➕</span>
+                                添加股票
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="watchlist-table">
@@ -204,29 +220,10 @@
                                     </tr>
                                 </thead>
                                 <tbody id="watchlistBody">
-                                    <!-- Sample data -->
+                                    <!-- Data loaded dynamically -->
                                     <tr>
-                                        <td>000001</td>
-                                        <td>平安银行</td>
-                                        <td>¥12.45</td>
-                                        <td class="positive">+2.3%</td>
-                                        <td>¥13.50</td>
-                                        <td><span class="badge badge-success">正常</span></td>
-                                        <td>
-                                            <button class="btn-icon" title="详情"><span>ℹ️</span></button>
-                                            <button class="btn-icon" title="删除"><span>🗑️</span></button>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>600036</td>
-                                        <td>招商银行</td>
-                                        <td>¥35.67</td>
-                                        <td class="negative">-1.2%</td>
-                                        <td>¥38.00</td>
-                                        <td><span class="badge badge-warning">关注</span></td>
-                                        <td>
-                                            <button class="btn-icon" title="详情"><span>ℹ️</span></button>
-                                            <button class="btn-icon" title="删除"><span>🗑️</span></button>
+                                        <td colspan="7" style="text-align: center; color: var(--text-secondary);">
+                                            加载中...
                                         </td>
                                     </tr>
                                 </tbody>
@@ -248,6 +245,10 @@
                                 <option>本周</option>
                                 <option>本月</option>
                             </select>
+                            <button class="btn btn-danger" id="clearHistoryBtn">
+                                <span>🗑️</span>
+                                清空历史记录
+                            </button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -286,6 +287,7 @@
                                         <th>实际结果</th>
                                         <th>准确性</th>
                                         <th>操作</th>
+                                        <th>观测池</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -297,6 +299,7 @@
                                         <td class="positive">+2.3%</td>
                                         <td><span class="badge badge-success">准确</span></td>
                                         <td><button class="btn-icon"><span>👁️</span></button></td>
+                                        <td><button class="btn-icon btn-add" onclick="addToWatchlistFromHistory('000001')" title="添加到观测池"><span>➕</span></button></td>
                                     </tr>
                                     <tr>
                                         <td>2026-01-29 10:15</td>
@@ -306,6 +309,7 @@
                                         <td>进行中</td>
                                         <td><span class="badge badge-info">待验证</span></td>
                                         <td><button class="btn-icon"><span>👁️</span></button></td>
+                                        <td><button class="btn-icon btn-add" onclick="addToWatchlistFromHistory('600036')" title="添加到观测池"><span>➕</span></button></td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -319,17 +323,48 @@
                 <div class="card">
                     <div class="card-header">
                         <h2>数据分析</h2>
+                        <button class="btn btn-primary" id="refreshAnalyticsBtn" onclick="refreshAnalytics()">
+                            🔄 刷新数据
+                        </button>
                     </div>
                     <div class="card-body">
                         <div class="analytics-grid">
                             <div class="analytics-card">
-                                <h3>板块热度分析</h3>
+                                <h3>板块热度分析 <span id="sectorSource" class="source-tag"></span></h3>
                                 <canvas id="sectorChart"></canvas>
+                                <div id="sectorDetails" class="sector-details"></div>
                             </div>
                             <div class="analytics-card">
                                 <h3>市场情绪指标</h3>
                                 <canvas id="sentimentChart"></canvas>
                             </div>
+                        </div>
+                        
+                        <!-- 板块热力图 -->
+                        <div class="heatmap-section">
+                            <div class="card-header">
+                                <div class="heatmap-title-row">
+                                    <h3>全市场板块热力图 <span id="heatmapCount" class="count-tag"></span></h3>
+                                    <div class="view-toggle-btns">
+                                        <button class="toggle-btn active" id="gridViewBtn" onclick="switchHeatmapView('grid')">
+                                            ⊞ 网格
+                                        </button>
+                                        <button class="toggle-btn" id="treemapViewBtn" onclick="switchHeatmapView('treemap')">
+                                            ▦ 树图
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="heatmap-legend">
+                                    <span class="legend-item"><span class="legend-color" style="background: #4CAF50;"></span>涨幅>2%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #8BC34A;"></span>涨幅1-2%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #CDDC39;"></span>涨幅0-1%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #FFEB3B;"></span>持平</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #FF9800;"></span>跌幅0-1%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #F44336;"></span>跌幅>1%</span>
+                                </div>
+                            </div>
+                            <div id="sectorHeatmap" class="sector-heatmap"></div>
+                            <div id="sectorTreemap" class="sector-treemap" style="display: none;"></div>
                         </div>
                     </div>
                 </div>
