@@ -4,6 +4,8 @@ SIAPS Web UI - Minimal Flask Backend
 A lightweight web interface for the Stock Intelligent Analysis & Prediction System
 """
 import sys
+import argparse
+import socket
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
@@ -767,6 +769,20 @@ def health_check():
     })
 
 
+def get_local_ip():
+    """Get the local IP address of the machine"""
+    try:
+        # Create a socket connection to get the local IP
+        # Uses Google DNS as a reliable external reference point
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except (socket.error, OSError):
+        return "无法获取"
+
+
 def open_browser(port=5000):
     """Open browser after a short delay"""
     import time
@@ -776,16 +792,50 @@ def open_browser(port=5000):
 
 def main():
     """Main entry point"""
-    port = 5000
-    host = '127.0.0.1'
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='SIAPS Web UI - 股票智能分析预测系统')
+    parser.add_argument('--host', type=str, default='127.0.0.1',
+                       help='主机地址 (默认: 127.0.0.1 仅本地访问, 使用 0.0.0.0 允许网络访问)')
+    parser.add_argument('--port', type=int, default=None,
+                       help='端口号 (默认: 5000, 云部署时使用环境变量 PORT)')
+    parser.add_argument('--no-browser', action='store_true',
+                       help='不自动打开浏览器')
+    parser.add_argument('--mobile', action='store_true',
+                       help='启用手机访问模式（等同于 --host 0.0.0.0）- 仅在可信任网络中使用')
+    
+    args = parser.parse_args()
+    
+    # If mobile mode is enabled, override host
+    if args.mobile:
+        args.host = '0.0.0.0'
+    
+    # Support cloud deployment: use PORT environment variable if available
+    import os
+    port = args.port or int(os.environ.get('PORT', 5000))
+    host = args.host
     
     print("=" * 70)
     print("  SIAPS - 股票智能分析预测系统 Web UI")
     print("  Stock Intelligent Analysis & Prediction System")
     print("=" * 70)
-    print(f"\n🚀 Starting web server on http://{host}:{port}")
-    print(f"📊 Open your browser and navigate to: http://{host}:{port}")
-    print("\n💡 Features:")
+    
+    # Display access information
+    if host == '0.0.0.0':
+        local_ip = get_local_ip()
+        print(f"\n🌐 网络访问模式 (Network Access Mode)")
+        print(f"📱 手机访问 (Mobile Access): http://{local_ip}:{port}")
+        print(f"💻 本地访问 (Local Access): http://127.0.0.1:{port}")
+        print(f"\n⚠️  安全提示: 服务已暴露到网络，请确保在可信任的网络环境中使用")
+        print(f"⚠️  Security: Service exposed to network - use only on trusted networks")
+        print(f"⚠️  确保您的手机和电脑在同一局域网内")
+        print(f"⚠️  Make sure your phone and computer are on the same network")
+    else:
+        print(f"\n🚀 Starting web server on http://{host}:{port}")
+        print(f"📊 本地访问 (Local Access Only): http://{host}:{port}")
+        print(f"\n💡 手机访问提示: 使用 --mobile 参数启用手机访问")
+        print(f"💡 For mobile access: use --mobile parameter")
+    
+    print("\n✨ Features:")
     print("   - 股票预测 (Stock Prediction)")
     print("   - 观测池管理 (Watchlist Management)")
     print("   - 历史记录查询 (History)")
@@ -794,8 +844,9 @@ def main():
     print("\n⚠️  Press Ctrl+C to stop the server")
     print("=" * 70 + "\n")
     
-    # Open browser in a separate thread
-    threading.Thread(target=open_browser, args=(port,), daemon=True).start()
+    # Open browser in a separate thread (only for local access)
+    if not args.no_browser and host == '127.0.0.1':
+        threading.Thread(target=open_browser, args=(port,), daemon=True).start()
     
     # Start Flask server
     try:
