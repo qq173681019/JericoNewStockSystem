@@ -366,10 +366,99 @@ quickSearch.addEventListener('input', (e) => {
 const addStockBtn = document.getElementById('addStockBtn');
 const refreshWatchlistBtn = document.getElementById('refreshWatchlistBtn');
 
+// Show add stock modal
 addStockBtn.addEventListener('click', () => {
-    const stockCode = prompt('请输入要添加的股票代码:');
-    if (stockCode && stockCode.trim()) {
-        addToWatchlist(stockCode.trim());
+    openAddStockModal();
+});
+
+// Modal functions
+function openAddStockModal() {
+    const modal = document.getElementById('addStockModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // Clear previous values
+        document.getElementById('modalStockCode').value = '';
+        document.getElementById('modalTargetPrice').value = '';
+        document.getElementById('modalTargetDays').value = '';
+        // Focus on stock code input
+        setTimeout(() => document.getElementById('modalStockCode').focus(), 100);
+    }
+}
+
+function closeAddStockModal() {
+    const modal = document.getElementById('addStockModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Submit add stock form
+async function submitAddStock() {
+    const stockCode = document.getElementById('modalStockCode').value.trim();
+    
+    if (!stockCode) {
+        alert('请输入股票代码');
+        return;
+    }
+    
+    showLoading();
+    closeAddStockModal();
+    
+    try {
+        const requestBody = { stockCode: stockCode };
+        
+        const response = await fetch('/api/watchlist', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            await loadWatchlist();
+            alert(result.message || `成功添加 ${stockCode} 到观测池`);
+        } else {
+            alert(result.error || '添加失败');
+        }
+    } catch (error) {
+        console.error('Error adding to watchlist:', error);
+        alert('添加失败: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Navigate to prediction page and analyze stock
+function analyzePrediction(stockCode) {
+    // Switch to prediction view
+    switchView('prediction');
+    // Fill in the stock code
+    stockCodeInput.value = stockCode;
+    // Trigger prediction
+    runPrediction();
+}
+
+// Make functions globally accessible
+window.openAddStockModal = openAddStockModal;
+window.closeAddStockModal = closeAddStockModal;
+window.submitAddStock = submitAddStock;
+window.analyzePrediction = analyzePrediction;
+
+// Close modal when clicking outside
+document.addEventListener('click', (e) => {
+    const modal = document.getElementById('addStockModal');
+    if (e.target === modal) {
+        closeAddStockModal();
+    }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeAddStockModal();
     }
 });
 
@@ -479,17 +568,17 @@ async function loadWatchlist() {
             tbody.innerHTML = '';
             
             if (result.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">观测池为空，点击上方"+"按钮添加股票</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">观测池为空，点击上方"+"按钮添加股票</td></tr>';
                 return;
             }
             
             result.data.forEach(stock => {
                 const changeClass = stock.change >= 0 ? 'positive' : 'negative';
                 const changeSign = stock.change >= 0 ? '+' : '';
-                const alertBadge = stock.change > 5 ? 'badge-warning' : 
-                                   stock.change < -5 ? 'badge-danger' : 'badge-success';
-                const alertText = stock.change > 5 ? '关注' : 
-                                  stock.change < -5 ? '警告' : '正常';
+                const statusBadge = stock.change > 3 ? 'badge-success' : 
+                                   stock.change < -3 ? 'badge-danger' : 'badge-info';
+                const statusText = stock.change > 3 ? '强势' : 
+                                  stock.change < -3 ? '弱势' : '平稳';
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
@@ -497,9 +586,9 @@ async function loadWatchlist() {
                     <td>${stock.name || '-'}</td>
                     <td>¥${stock.currentPrice ? stock.currentPrice.toFixed(2) : '-'}</td>
                     <td class="${changeClass}">${changeSign}${stock.change ? stock.change.toFixed(2) : 0}%</td>
-                    <td>¥${stock.targetPrice ? stock.targetPrice.toFixed(2) : '-'}</td>
-                    <td><span class="badge ${alertBadge}">${alertText}</span></td>
+                    <td><span class="badge ${statusBadge}">${statusText}</span></td>
                     <td>
+                        <button class="btn-icon" title="预测分析" onclick="analyzePrediction('${stock.code}')"><span>📊</span></button>
                         <button class="btn-icon" title="刷新" onclick="refreshWatchlistItem('${stock.code}')"><span>🔄</span></button>
                         <button class="btn-icon" title="删除" onclick="removeFromWatchlist('${stock.code}')"><span>🗑️</span></button>
                     </td>
@@ -509,7 +598,7 @@ async function loadWatchlist() {
         }
     } catch (error) {
         console.error('Error loading watchlist:', error);
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--danger-color);">加载失败</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">加载失败</td></tr>';
     }
 }
 

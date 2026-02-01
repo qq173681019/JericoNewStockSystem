@@ -214,15 +214,14 @@
                                         <th>股票名称</th>
                                         <th>当前价格</th>
                                         <th>涨跌幅</th>
-                                        <th>目标价</th>
-                                        <th>预警</th>
+                                        <th>状态</th>
                                         <th>操作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="watchlistBody">
                                     <!-- Data loaded dynamically -->
                                     <tr>
-                                        <td colspan="7" style="text-align: center; color: var(--text-secondary);">
+                                        <td colspan="6" style="text-align: center; color: var(--text-secondary);">
                                             加载中...
                                         </td>
                                     </tr>
@@ -398,9 +397,10 @@
                             <div class="setting-item">
                                 <label>默认数据源</label>
                                 <select class="setting-select">
+                                    <option selected>新浪财经</option>
+                                    <option>东方财富</option>
                                     <option>AKShare</option>
                                     <option>TuShare</option>
-                                    <option>东方财富</option>
                                 </select>
                             </div>
                         </div>
@@ -416,6 +416,27 @@
             </div>
         </div>
     </main>
+
+    <!-- Add Stock Modal -->
+    <div class="modal-overlay" id="addStockModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>添加股票到观测池</h3>
+                <button class="modal-close" onclick="closeAddStockModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>股票代码 <span class="required">*</span></label>
+                    <input type="text" id="modalStockCode" placeholder="例如: 000001" class="form-input">
+                    <small class="form-hint">添加后可在预测页面进行股票分析</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddStockModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitAddStock()">添加</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">

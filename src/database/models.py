@@ -73,12 +73,30 @@ class DatabaseManager:
         self.engine = create_engine(database_url, echo=False)
         self.Session = sessionmaker(bind=self.engine)
         self.create_tables()
+        self.migrate_database()
         logger.info(f"Database initialized: {database_url}")
     
     def create_tables(self):
         """Create all tables if they don't exist"""
         Base.metadata.create_all(self.engine)
         logger.info("Database tables created/verified")
+    
+    def migrate_database(self):
+        """Handle database migrations for new columns"""
+        try:
+            from sqlalchemy import text
+            with self.engine.connect() as conn:
+                # Check if target_days column exists in watchlist table
+                try:
+                    conn.execute(text("SELECT target_days FROM watchlist LIMIT 1"))
+                except Exception:
+                    # Column doesn't exist, add it
+                    logger.info("Adding target_days column to watchlist table...")
+                    conn.execute(text("ALTER TABLE watchlist ADD COLUMN target_days INTEGER"))
+                    conn.commit()
+                    logger.info("Successfully added target_days column")
+        except Exception as e:
+            logger.warning(f"Migration check failed (this is okay for new databases): {e}")
     
     def get_session(self):
         """Get a new database session"""

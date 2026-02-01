@@ -341,6 +341,7 @@ def manage_watchlist():
                     'currentPrice': current_price,
                     'change': change_pct,
                     'targetPrice': target_price or 0,
+                    'targetDays': item.target_days or 0,
                     'stopLoss': item.stop_loss_price or 0,
                     'notes': item.notes or '',
                     'createdAt': item.created_at.isoformat() if item.created_at else '',
