@@ -1,5 +1,6 @@
-# Production dependencies for cloud deployment
+# Production dependencies for cloud deployment (Railway/Render optimized)
 # Lightweight version without heavy ML libraries
+# Optimized to avoid build timeouts
 
 # Core
 python-dotenv>=1.0.0
@@ -7,8 +8,9 @@ python-dotenv>=1.0.0
 # Web Framework
 Flask>=3.0.0
 Flask-CORS>=4.0.0
+gunicorn>=21.2.0
 
-# Data handling
+# Data handling - using binary wheels for faster installation
 pandas>=2.0.0
 numpy>=1.24.0
 requests>=2.31.0
@@ -22,7 +24,6 @@ sqlalchemy>=2.0.0
 # Utilities
 python-dateutil>=2.8.2
 pytz>=2023.3
-matplotlib>=3.7.0
 
-# Optional: For better performance
-gunicorn>=21.2.0
+# Note: matplotlib removed for cloud deployment to reduce build time
+# The web UI doesn't require matplotlib for rendering
