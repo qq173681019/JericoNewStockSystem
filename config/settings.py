@@ -16,9 +16,18 @@ except ImportError:
 # Project root directory
 ROOT_DIR = Path(__file__).parent.parent.parent
 SRC_DIR = ROOT_DIR / "src"
-DATA_DIR = ROOT_DIR / "data"
-LOGS_DIR = ROOT_DIR / "logs"
-MODELS_DIR = ROOT_DIR / "models"
+
+# Use /tmp for data in cloud environments (Railway, Vercel, etc.)
+# These platforms have read-only file systems except for /tmp
+IS_CLOUD_ENV = os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("VERCEL") or os.getenv("RENDER")
+if IS_CLOUD_ENV:
+    DATA_DIR = Path("/tmp/data")
+    LOGS_DIR = Path("/tmp/logs")
+    MODELS_DIR = Path("/tmp/models")
+else:
+    DATA_DIR = ROOT_DIR / "data"
+    LOGS_DIR = ROOT_DIR / "logs"
+    MODELS_DIR = ROOT_DIR / "models"
 
 # Create necessary directories
 for directory in [DATA_DIR, LOGS_DIR, MODELS_DIR, DATA_DIR / "cache", MODELS_DIR / "saved"]:
