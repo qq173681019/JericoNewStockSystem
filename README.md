@@ -32,6 +32,7 @@
 - ✅ 优化了 Vercel 和 Railway 配置文件
 - ✅ 使用 Gunicorn 替代 Flask 开发服务器
 - ✅ 精简了依赖包，加快构建速度
+- ✅ **修复了 Vercel 缓冲区溢出错误** - 分离开发和生产依赖 ([详情](VERCEL_FIX.md))
 
 ---
 

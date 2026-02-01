@@ -6,6 +6,12 @@
 
 The Vercel deployment issue has been fixed! The project can now be successfully deployed to Vercel.
 
+### 最新修复 / Latest Fix
+
+**缓冲区溢出错误已解决！** 如果您之前遇到 `RangeError [ERR_OUT_OF_RANGE]` 错误，现已修复。[查看详情](VERCEL_FIX.md)
+
+**Buffer overflow error fixed!** If you previously encountered `RangeError [ERR_OUT_OF_RANGE]` error, it's now fixed. [See details](VERCEL_FIX.md)
+
 ---
 
 ## 📋 修复内容 / What Was Fixed
