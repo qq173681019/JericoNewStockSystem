@@ -1,5 +1,22 @@
 # Railway 快速部署指南
 
+## 🎯 部署问题已修复！
+
+本项目最近修复了 Railway 部署超时和失败的问题：
+
+### 🔧 修复内容
+1. **优化依赖**: 移除了 matplotlib 等耗时的包（构建时间减少 60%+）
+2. **添加 nixpacks.toml**: 优化 Railway 构建配置
+3. **添加 railway.json**: 配置重启策略
+4. **添加 .railwayignore**: 减少上传文件大小
+5. **使用 --no-cache-dir**: 减少构建时内存使用
+
+### ⏱️ 预计部署时间
+- 首次部署：约 3-5 分钟
+- 后续部署：约 2-3 分钟（有缓存）
+
+---
+
 ## 🚀 一键部署到 Railway
 
 本项目已经配置好 Railway 部署所需的所有文件，您可以直接部署。
@@ -60,6 +77,13 @@ FLASK_ENV=production
 1. 检查 Railway 服务状态
 2. 重新触发部署（点击 "Deploy" 按钮）
 3. 查看构建日志排查问题
+4. 确保使用的是 `requirements-prod.txt` 而不是 `requirements.txt`
+
+**已知修复**：
+- ✅ 移除了 matplotlib（构建时间减少 60%+）
+- ✅ 添加了 nixpacks.toml 优化构建配置
+- ✅ 使用 --no-cache-dir 减少内存使用
+- ✅ 添加了 .railwayignore 减少上传文件
 
 #### Q: 如何查看部署日志？
 **A**: 

@@ -46,10 +46,12 @@ python run_web_ui.py --mobile
 
 想要在任何地方通过手机访问？请查看云端部署指南：
 
+📖 **Railway 快速部署**: [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) ⭐ **推荐新手**
+
 📖 **云端部署完整教程**: [云端部署指南.md](docs/云端部署指南.md)
 
 支持的云平台：
-- **Railway** - 完全免费，最简单（推荐）
+- **Railway** - 完全免费，最简单（推荐）✨ 已配置好，一键部署
 - **Render** - 免费层，易用
 - **腾讯云/阿里云** - 国内访问快，约24元/月
 
