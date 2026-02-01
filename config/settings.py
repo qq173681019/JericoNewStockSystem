@@ -19,7 +19,11 @@ SRC_DIR = ROOT_DIR / "src"
 
 # Use /tmp for data in cloud environments (Railway, Vercel, etc.)
 # These platforms have read-only file systems except for /tmp
-IS_CLOUD_ENV = os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("VERCEL") or os.getenv("RENDER")
+IS_CLOUD_ENV = (
+    os.getenv("RAILWAY_ENVIRONMENT") is not None or 
+    os.getenv("VERCEL") is not None or 
+    os.getenv("RENDER") is not None
+)
 if IS_CLOUD_ENV:
     DATA_DIR = Path("/tmp/data")
     LOGS_DIR = Path("/tmp/logs")
