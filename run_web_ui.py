@@ -773,12 +773,13 @@ def get_local_ip():
     """Get the local IP address of the machine"""
     try:
         # Create a socket connection to get the local IP
+        # Uses Google DNS as a reliable external reference point
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         local_ip = s.getsockname()[0]
         s.close()
         return local_ip
-    except Exception:
+    except (socket.error, OSError):
         return "无法获取"
 
 
@@ -800,7 +801,7 @@ def main():
     parser.add_argument('--no-browser', action='store_true',
                        help='不自动打开浏览器')
     parser.add_argument('--mobile', action='store_true',
-                       help='启用手机访问模式（等同于 --host 0.0.0.0）')
+                       help='启用手机访问模式（等同于 --host 0.0.0.0）- 仅在可信任网络中使用')
     
     args = parser.parse_args()
     
@@ -822,7 +823,9 @@ def main():
         print(f"\n🌐 网络访问模式 (Network Access Mode)")
         print(f"📱 手机访问 (Mobile Access): http://{local_ip}:{port}")
         print(f"💻 本地访问 (Local Access): http://127.0.0.1:{port}")
-        print(f"\n⚠️  确保您的手机和电脑在同一局域网内")
+        print(f"\n⚠️  安全提示: 服务已暴露到网络，请确保在可信任的网络环境中使用")
+        print(f"⚠️  Security: Service exposed to network - use only on trusted networks")
+        print(f"⚠️  确保您的手机和电脑在同一局域网内")
         print(f"⚠️  Make sure your phone and computer are on the same network")
     else:
         print(f"\n🚀 Starting web server on http://{host}:{port}")
