@@ -1,0 +1,17 @@
+# Nixpacks configuration for Railway deployment
+# This file optimizes the build process and prevents timeouts
+
+[phases.setup]
+nixPkgs = ["python311", "gcc", "gfortran", "libgfortran5"]
+
+[phases.install]
+cmds = [
+    "pip install --upgrade pip setuptools wheel",
+    "pip install --no-cache-dir -r requirements-prod.txt"
+]
+
+[phases.build]
+# No build phase needed for this Python app
+
+[start]
+cmd = "python run_web_ui.py --host 0.0.0.0 --port $PORT --no-browser"
