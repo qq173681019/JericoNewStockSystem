@@ -49,12 +49,12 @@
 
 ### 🎯 项目配置说明
 
-本项目包含以下 Railway 配置文件：
+本项目包含以下 Railway 配置文件（已预配置）：
 
 - **`nixpacks.toml`** - Nixpacks 构建配置，优化构建过程
 - **`railway.json`** - Railway 平台配置
-- **`Procfile`** - 启动命令配置
-- **`runtime.txt`** - Python 版本指定 (3.11.7)
+- **`Procfile`** - 启动命令配置（已存在）
+- **`runtime.txt`** - Python 版本指定 (3.11.7)（已存在）
 - **`requirements-prod.txt`** - 生产环境依赖（已优化）
 - **`.railwayignore`** - 忽略不需要部署的文件
 

@@ -2,7 +2,7 @@
 # This file optimizes the build process and prevents timeouts
 
 [phases.setup]
-nixPkgs = ["python311", "gcc", "gfortran", "libgfortran5"]
+nixPkgs = ["python311"]
 
 [phases.install]
 cmds = [

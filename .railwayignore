@@ -27,10 +27,11 @@ ENV/
 htmlcov/
 .tox/
 
-# Documentation
+# Documentation (except deployment guides)
 docs/
 *.md
 !README.md
+!RAILWAY_DEPLOYMENT.md
 
 # Local development files
 *.bat
