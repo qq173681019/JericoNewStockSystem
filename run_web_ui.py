@@ -796,8 +796,8 @@ def main():
     parser = argparse.ArgumentParser(description='SIAPS Web UI - 股票智能分析预测系统')
     parser.add_argument('--host', type=str, default='127.0.0.1',
                        help='主机地址 (默认: 127.0.0.1 仅本地访问, 使用 0.0.0.0 允许网络访问)')
-    parser.add_argument('--port', type=int, default=5000,
-                       help='端口号 (默认: 5000)')
+    parser.add_argument('--port', type=int, default=None,
+                       help='端口号 (默认: 5000, 云部署时使用环境变量 PORT)')
     parser.add_argument('--no-browser', action='store_true',
                        help='不自动打开浏览器')
     parser.add_argument('--mobile', action='store_true',
@@ -809,7 +809,9 @@ def main():
     if args.mobile:
         args.host = '0.0.0.0'
     
-    port = args.port
+    # Support cloud deployment: use PORT environment variable if available
+    import os
+    port = args.port or int(os.environ.get('PORT', 5000))
     host = args.host
     
     print("=" * 70)
