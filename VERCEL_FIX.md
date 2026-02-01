@@ -36,9 +36,10 @@ When Vercel's build system (based on Node.js) tried to download and process thes
 
 ### 修改内容 / Changes Made
 
-1. **重命名文件** / **File Renaming**:
-   - `requirements.txt` → `requirements-dev.txt` (包含所有开发依赖，including ML libraries)
-   - `requirements-prod.txt` → `requirements.txt` (轻量级生产依赖，lightweight production deps)
+1. **文件重组** / **File Reorganization**:
+   - 原 `requirements.txt` 的内容 → `requirements-dev.txt` (包含所有开发依赖，including ML libraries)
+   - 更新 `requirements.txt` 使用生产依赖 (轻量级生产依赖，lightweight production deps)
+   - `requirements-prod.txt` 保持不变作为备用 (已存在的文件，unchanged)
 
 2. **依赖分离** / **Dependency Separation**:
 
@@ -172,9 +173,9 @@ python main.py  # Start desktop version
 
 ### Q: 为什么保留 requirements-prod.txt？
 
-**A**: 为了向后兼容。某些部署平台可能仍引用这个文件。
+**A**: 为了向后兼容。这个文件在之前的部署修复中就存在，某些用户可能仍在引用它。它与新的 `requirements.txt` 内容相同。
 
-**A**: For backward compatibility. Some deployment platforms may still reference this file.
+**A**: For backward compatibility. This file existed from a previous deployment fix, and some users may still reference it. It has the same content as the new `requirements.txt`.
 
 ## 技术细节 / Technical Details
 

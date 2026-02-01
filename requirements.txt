@@ -25,5 +25,6 @@ sqlalchemy>=2.0.0
 python-dateutil>=2.8.2
 pytz>=2023.3
 
-# Note: matplotlib removed for cloud deployment to reduce build time
-# The web UI doesn't require matplotlib for rendering
+# Note: Heavy ML libraries (PyTorch, TensorFlow, Prophet) and desktop GUI libraries
+# (matplotlib, customtkinter) moved to requirements-dev.txt for local development.
+# This production file contains only the lightweight dependencies needed for web deployment.
