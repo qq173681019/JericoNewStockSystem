@@ -1,9 +1,37 @@
 # SIAPS - 股票智能分析预测系统
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Deploy with Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/qq173681019/JericoNewStockSystem)
+[![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-purple?logo=railway)](https://railway.app/new/template)
 
 **Stock Intelligent Analysis & Prediction System (SIAPS)** - 一个基于机器学习和深度学习的股票分析预测系统。
+
+---
+
+## 🚀 云端部署 | Cloud Deployment
+
+**一键部署到云端，随时随地访问！**
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/qq173681019/JericoNewStockSystem)
+
+📖 **完整部署指南**: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) - 详细的 Railway 和 Vercel 部署教程
+
+### ✨ 部署特性
+
+- ✅ **已优化配置** - 开箱即用的部署配置
+- ✅ **自动构建** - 推送代码自动部署
+- ✅ **生产就绪** - 使用 Gunicorn WSGI 服务器
+- ✅ **云环境优化** - 自动适配云平台文件系统
+- ✅ **快速启动** - 5分钟内完成部署
+
+### 🔧 主要改进
+
+本版本已解决之前的部署问题：
+- ✅ 修复了云环境数据库路径问题（使用 `/tmp` 目录）
+- ✅ 优化了 Vercel 和 Railway 配置文件
+- ✅ 使用 Gunicorn 替代 Flask 开发服务器
+- ✅ 精简了依赖包，加快构建速度
 
 ---
 
