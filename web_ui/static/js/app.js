@@ -929,79 +929,140 @@ function drawSectorTreemap(sectors) {
     container.innerHTML = html;
 }
 
-// Calculate treemap layout using slice-and-dice algorithm
+// Calculate treemap layout using squarified algorithm
 function calculateTreemapLayout(sectors, width, height) {
     if (!sectors || sectors.length === 0) return [];
     
-    // Calculate weights based on absolute change + base weight
-    const totalWeight = sectors.reduce((sum, s) => sum + Math.abs(s.change) + 2, 0);
+    // Calculate weights - use equal base weight for all sectors to ensure display
+    const totalWeight = sectors.reduce((sum, s) => {
+        // Use absolute change + base weight, minimum 1 to ensure all sectors get space
+        return sum + Math.max(1, Math.abs(s.change) + 1);
+    }, 0);
+    
+    // Normalize weights to total area
+    const totalArea = width * height;
+    const sectorsWithArea = sectors.map(s => ({
+        ...s,
+        weight: Math.max(1, Math.abs(s.change) + 1),
+        area: (Math.max(1, Math.abs(s.change) + 1) / totalWeight) * totalArea
+    }));
+    
+    // Squarify layout
+    const cells = squarify(sectorsWithArea, 0, 0, width, height);
+    return cells;
+}
+
+// Squarified treemap algorithm for better aspect ratios
+function squarify(items, x, y, width, height) {
+    if (items.length === 0) return [];
     
     const cells = [];
-    let x = 0, y = 0;
+    let remaining = [...items];
+    let currentX = x;
+    let currentY = y;
     let remainingWidth = width;
     let remainingHeight = height;
-    let isHorizontal = width >= height;
-    let currentRow = [];
-    let currentRowWeight = 0;
     
-    sectors.forEach((sector, index) => {
-        const weight = Math.abs(sector.change) + 2;
-        currentRow.push({ ...sector, weight });
-        currentRowWeight += weight;
+    while (remaining.length > 0) {
+        // Determine layout direction
+        const isHorizontal = remainingWidth >= remainingHeight;
         
-        // Decide when to start new row (roughly when we've filled half)
-        const shouldBreak = currentRowWeight / totalWeight > 0.15 || index === sectors.length - 1;
+        // Calculate how many items to put in the next row
+        const totalRemainingArea = remaining.reduce((sum, item) => sum + item.area, 0);
+        let row = [];
+        let rowArea = 0;
         
-        if (shouldBreak) {
-            // Layout current row
-            const rowFraction = currentRowWeight / totalWeight;
+        // Greedily add items to row while improving aspect ratio
+        for (let i = 0; i < remaining.length; i++) {
+            const item = remaining[i];
+            const testRowArea = rowArea + item.area;
+            const testRow = [...row, item];
             
-            if (isHorizontal) {
-                const rowHeight = Math.max(30, remainingHeight * rowFraction * (sectors.length / (index + 1)) * 0.5);
-                let rowX = x;
-                
-                currentRow.forEach(item => {
-                    const cellWidth = (item.weight / currentRowWeight) * remainingWidth;
-                    cells.push({
-                        ...item,
-                        x: rowX,
-                        y: y,
-                        w: Math.max(cellWidth - 1, 20),
-                        h: Math.max(rowHeight - 1, 20)
-                    });
-                    rowX += cellWidth;
-                });
-                
-                y += rowHeight;
-                remainingHeight -= rowHeight;
+            // Calculate aspect ratio for this row
+            const aspectRatio = calculateRowAspectRatio(
+                testRow, 
+                testRowArea, 
+                isHorizontal ? remainingWidth : remainingHeight
+            );
+            
+            // If this is first item or aspect ratio improves, add it
+            if (row.length === 0 || 
+                (row.length < 8 && aspectRatio < 3) || // Limit row size and aspect ratio
+                remaining.length === 1) {
+                row.push(item);
+                rowArea = testRowArea;
             } else {
-                const rowWidth = Math.max(30, remainingWidth * rowFraction * (sectors.length / (index + 1)) * 0.5);
-                let rowY = y;
-                
-                currentRow.forEach(item => {
-                    const cellHeight = (item.weight / currentRowWeight) * remainingHeight;
-                    cells.push({
-                        ...item,
-                        x: x,
-                        y: rowY,
-                        w: Math.max(rowWidth - 1, 20),
-                        h: Math.max(cellHeight - 1, 20)
-                    });
-                    rowY += cellHeight;
-                });
-                
-                x += rowWidth;
-                remainingWidth -= rowWidth;
+                break;
             }
-            
-            // Reset for next row
-            currentRow = [];
-            currentRowWeight = 0;
-            isHorizontal = !isHorizontal;
         }
-    });
+        
+        // If we couldn't add anything, force add at least one
+        if (row.length === 0 && remaining.length > 0) {
+            row = [remaining[0]];
+            rowArea = remaining[0].area;
+        }
+        
+        // Layout the row
+        if (isHorizontal) {
+            // Horizontal layout (row spans width, divided vertically)
+            const rowHeight = rowArea / remainingWidth;
+            let cellX = currentX;
+            
+            row.forEach(item => {
+                const cellWidth = item.area / rowHeight;
+                cells.push({
+                    ...item,
+                    x: Math.round(cellX),
+                    y: Math.round(currentY),
+                    w: Math.max(Math.round(cellWidth) - 2, 10),
+                    h: Math.max(Math.round(rowHeight) - 2, 10)
+                });
+                cellX += cellWidth;
+            });
+            
+            currentY += rowHeight;
+            remainingHeight -= rowHeight;
+        } else {
+            // Vertical layout (row spans height, divided horizontally)
+            const rowWidth = rowArea / remainingHeight;
+            let cellY = currentY;
+            
+            row.forEach(item => {
+                const cellHeight = item.area / rowWidth;
+                cells.push({
+                    ...item,
+                    x: Math.round(currentX),
+                    y: Math.round(cellY),
+                    w: Math.max(Math.round(rowWidth) - 2, 10),
+                    h: Math.max(Math.round(cellHeight) - 2, 10)
+                });
+                cellY += cellHeight;
+            });
+            
+            currentX += rowWidth;
+            remainingWidth -= rowWidth;
+        }
+        
+        // Remove processed items
+        remaining = remaining.slice(row.length);
+    }
     
     return cells;
+}
+
+// Calculate aspect ratio for a row of items
+function calculateRowAspectRatio(row, rowArea, rowLength) {
+    if (row.length === 0) return Infinity;
+    
+    // Calculate average aspect ratio of cells in the row
+    let worstRatio = 0;
+    row.forEach(item => {
+        const cellLength = item.area / rowLength;
+        const ratio = Math.max(cellLength / rowLength, rowLength / cellLength);
+        worstRatio = Math.max(worstRatio, ratio);
+    });
+    
+    return worstRatio;
 }
 
 // Get color for treemap (red for up, green for down - Chinese stock market convention)
