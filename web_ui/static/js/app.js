@@ -999,7 +999,8 @@ function displaySectorDetails(details) {
     
     let detailsHTML = '<div class="sector-details-content">';
     details.forEach(sector => {
-        const changeColor = sector.change > 0 ? '#4caf50' : sector.change < 0 ? '#f44336' : '#999';
+        // Chinese stock market convention: red for up/rise, green for down/fall
+        const changeColor = sector.change > 0 ? '#ef4444' : sector.change < 0 ? '#10b981' : '#999';
         const changeSign = sector.change > 0 ? '+' : '';
         detailsHTML += `
             <div class="sector-detail-item">
