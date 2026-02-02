@@ -933,13 +933,16 @@ function drawSectorTreemap(sectors) {
 function calculateTreemapLayout(sectors, width, height) {
     if (!sectors || sectors.length === 0) return [];
     
-    // Use more balanced weight calculation for better treemap distribution
-    // Give each sector a substantial base weight plus change-based weight
+    // Use stocks count and heat as primary weight factors (like real stock market heatmaps)
+    // Area should represent market size/importance, color represents change
     const totalWeight = sectors.reduce((sum, s) => {
-        // Base weight of 10 for each sector to ensure reasonable display area
-        // Add change-based weight scaled up for visual differentiation
-        const changeWeight = Math.abs(s.change || 0) * 2; // Scale by 2x for better visibility
-        return sum + (10 + changeWeight);
+        // Primary weight: stocks count (market size) + heat (market attention)
+        // This matches real stock market heatmap behavior where area = importance
+        const stockWeight = (s.stocks || 50) / 10;  // Normalize stocks
+        const heatWeight = (s.heat || 50) / 10;     // Normalize heat
+        const baseWeight = stockWeight + heatWeight; // Base weight from market metrics
+        
+        return sum + Math.max(baseWeight, 5); // Minimum weight of 5
     }, 0);
     
     // Normalize weights to total area with minimum size enforcement
@@ -947,8 +950,9 @@ function calculateTreemapLayout(sectors, width, height) {
     const minCellArea = 2500; // Minimum 50x50px area per cell for readability
     
     const sectorsWithArea = sectors.map(s => {
-        const changeWeight = Math.abs(s.change || 0) * 2;
-        const weight = 10 + changeWeight;
+        const stockWeight = (s.stocks || 50) / 10;
+        const heatWeight = (s.heat || 50) / 10;
+        const weight = Math.max(stockWeight + heatWeight, 5);
         const idealArea = (weight / totalWeight) * totalArea;
         
         return {
