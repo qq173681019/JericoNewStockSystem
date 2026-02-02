@@ -4,9 +4,9 @@
     --primary-dark: #2563eb;
     --primary-light: #60a5fa;
     --secondary-color: #8b5cf6;
-    --success-color: #10b981;
+    --success-color: #ef4444;  /* Red for rise/up (Chinese stock market convention) */
     --warning-color: #f59e0b;
-    --danger-color: #ef4444;
+    --danger-color: #10b981;   /* Green for fall/down (Chinese stock market convention) */
     --info-color: #06b6d4;
     
     --bg-primary: #ffffff;
