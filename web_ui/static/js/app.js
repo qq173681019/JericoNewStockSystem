@@ -420,11 +420,25 @@ function openAddStockModal() {
     if (modal) {
         modal.style.display = 'flex';
         // Clear previous values
-        document.getElementById('modalStockCode').value = '';
-        document.getElementById('modalTargetPrice').value = '';
-        document.getElementById('modalTargetDays').value = '';
+        const stockCodeInput = document.getElementById('modalStockCode');
+        if (stockCodeInput) {
+            stockCodeInput.value = '';
+        }
+        // Clear optional fields if they exist
+        const targetPriceInput = document.getElementById('modalTargetPrice');
+        if (targetPriceInput) {
+            targetPriceInput.value = '';
+        }
+        const targetDaysInput = document.getElementById('modalTargetDays');
+        if (targetDaysInput) {
+            targetDaysInput.value = '';
+        }
         // Focus on stock code input
-        setTimeout(() => document.getElementById('modalStockCode').focus(), 100);
+        setTimeout(() => {
+            if (stockCodeInput) {
+                stockCodeInput.focus();
+            }
+        }, 100);
     }
 }
 
