@@ -1052,13 +1052,18 @@ function squarify(items, x, y, width, height) {
 
 // Calculate aspect ratio for a row of items
 function calculateRowAspectRatio(row, rowArea, rowLength) {
-    if (row.length === 0) return Infinity;
+    if (row.length === 0 || rowArea === 0 || rowLength === 0) return Infinity;
     
-    // Calculate average aspect ratio of cells in the row
+    // Row perpendicular dimension (width for vertical rows, height for horizontal)
+    const rowPerpendicularDim = rowArea / rowLength;
+    
+    // Calculate worst aspect ratio of cells in the row
     let worstRatio = 0;
     row.forEach(item => {
-        const cellLength = item.area / rowLength;
-        const ratio = Math.max(cellLength / rowLength, rowLength / cellLength);
+        // Cell dimension along the row direction
+        const cellLength = item.area / rowPerpendicularDim;
+        // Aspect ratio is max(width/height, height/width) to always be >= 1
+        const ratio = Math.max(cellLength / rowPerpendicularDim, rowPerpendicularDim / cellLength);
         worstRatio = Math.max(worstRatio, ratio);
     });
     
