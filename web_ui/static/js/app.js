@@ -913,8 +913,8 @@ function drawSectorTreemap(sectors) {
         // Determine size class for text visibility
         const area = cell.w * cell.h;
         let sizeClass = '';
-        if (area < 1500) sizeClass = 'tiny';
-        else if (area < 4000) sizeClass = 'small';
+        if (area < 2500) sizeClass = 'tiny';      // Below 50x50
+        else if (area < 5000) sizeClass = 'small'; // Below ~70x70
         
         html += `
             <div class="treemap-cell ${sizeClass}" 
@@ -933,20 +933,28 @@ function drawSectorTreemap(sectors) {
 function calculateTreemapLayout(sectors, width, height) {
     if (!sectors || sectors.length === 0) return [];
     
-    // Calculate weights - use equal base weight for all sectors to ensure display
+    // Use more balanced weight calculation for better treemap distribution
+    // Give each sector a substantial base weight plus change-based weight
     const totalWeight = sectors.reduce((sum, s) => {
-        // Use absolute change + base weight, minimum 1 to ensure all sectors get space
-        return sum + Math.max(1, Math.abs(s.change) + 1);
+        // Base weight of 10 for each sector to ensure reasonable display area
+        // Add change-based weight scaled up for visual differentiation
+        const changeWeight = Math.abs(s.change || 0) * 2; // Scale by 2x for better visibility
+        return sum + (10 + changeWeight);
     }, 0);
     
-    // Normalize weights to total area
+    // Normalize weights to total area with minimum size enforcement
     const totalArea = width * height;
+    const minCellArea = 2500; // Minimum 50x50px area per cell for readability
+    
     const sectorsWithArea = sectors.map(s => {
-        const weight = Math.max(1, Math.abs(s.change) + 1);
+        const changeWeight = Math.abs(s.change || 0) * 2;
+        const weight = 10 + changeWeight;
+        const idealArea = (weight / totalWeight) * totalArea;
+        
         return {
             ...s,
             weight: weight,
-            area: (weight / totalWeight) * totalArea
+            area: Math.max(idealArea, minCellArea) // Enforce minimum area
         };
     });
     
@@ -989,8 +997,9 @@ function squarify(items, x, y, width, height) {
             );
             
             // If this is first item or aspect ratio improves, add it
+            // More strict limits to prevent thin strips
             if (row.length === 0 || 
-                (row.length < 8 && aspectRatio < 3) || // Limit row size and aspect ratio
+                (row.length < 5 && aspectRatio < 2.5) || // Stricter limits for better shapes
                 remaining.length === 1) {
                 row.push(item);
                 rowArea = testRowArea;
@@ -1017,8 +1026,8 @@ function squarify(items, x, y, width, height) {
                     ...item,
                     x: Math.round(cellX),
                     y: Math.round(currentY),
-                    w: Math.max(Math.round(cellWidth) - 2, 10),
-                    h: Math.max(Math.round(rowHeight) - 2, 10)
+                    w: Math.max(Math.round(cellWidth) - 2, 50), // Minimum 50px width
+                    h: Math.max(Math.round(rowHeight) - 2, 40)  // Minimum 40px height
                 });
                 cellX += cellWidth;
             });
@@ -1036,8 +1045,8 @@ function squarify(items, x, y, width, height) {
                     ...item,
                     x: Math.round(currentX),
                     y: Math.round(cellY),
-                    w: Math.max(Math.round(rowWidth) - 2, 10),
-                    h: Math.max(Math.round(cellHeight) - 2, 10)
+                    w: Math.max(Math.round(rowWidth) - 2, 50),    // Minimum 50px width
+                    h: Math.max(Math.round(cellHeight) - 2, 40)   // Minimum 40px height
                 });
                 cellY += cellHeight;
             });

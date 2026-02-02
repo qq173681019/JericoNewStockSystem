@@ -1252,16 +1252,19 @@ tbody tr:hover {
 }
 
 .treemap-cell.small .cell-name {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
 }
 
 .treemap-cell.small .cell-change {
+    font-size: 0.65rem;
+}
+
+.treemap-cell.tiny .cell-name {
     font-size: 0.6rem;
 }
 
-.treemap-cell.tiny .cell-name,
 .treemap-cell.tiny .cell-change {
-    display: none;
+    font-size: 0.55rem;
 }
 
 .source-tag {
