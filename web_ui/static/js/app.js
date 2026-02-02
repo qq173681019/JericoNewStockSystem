@@ -892,11 +892,11 @@ function drawSectorTreemap(sectors) {
     const width = container.offsetWidth || 800;
     const height = 500;
     
-    // Sort by absolute change (larger changes get more space)
+    // Sort by sector weight (market size) for better treemap layout
+    // This ensures larger sectors get more space, not just volatile ones
     const sortedSectors = [...sectors].sort((a, b) => {
-        // Weight by absolute change value - bigger movers get more space
-        const aWeight = Math.abs(a.change) + 1;
-        const bWeight = Math.abs(b.change) + 1;
+        const aWeight = calculateSectorWeight(a);
+        const bWeight = calculateSectorWeight(b);
         return bWeight - aWeight;
     });
     
