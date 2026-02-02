@@ -15,6 +15,9 @@ const predictBtn = document.getElementById('predictBtn');
 const predictionResults = document.getElementById('predictionResults');
 const quickSearch = document.getElementById('quickSearch');
 
+// ===== Configuration Constants =====
+const MAX_PREDICTION_HISTORY = 100; // Maximum number of prediction entries to keep in localStorage
+
 // ===== Theme Management =====
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -220,9 +223,9 @@ function savePredictionToHistory(data) {
         // Add to beginning of array (most recent first)
         history.unshift(entry);
         
-        // Keep only last 100 predictions to avoid excessive storage
-        if (history.length > 100) {
-            history = history.slice(0, 100);
+        // Keep only last MAX_PREDICTION_HISTORY predictions to avoid excessive storage
+        if (history.length > MAX_PREDICTION_HISTORY) {
+            history = history.slice(0, MAX_PREDICTION_HISTORY);
         }
         
         // Save back to localStorage
