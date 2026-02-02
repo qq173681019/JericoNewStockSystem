@@ -15,6 +15,9 @@ const predictBtn = document.getElementById('predictBtn');
 const predictionResults = document.getElementById('predictionResults');
 const quickSearch = document.getElementById('quickSearch');
 
+// ===== Configuration Constants =====
+const MAX_PREDICTION_HISTORY = 100; // Maximum number of prediction entries to keep in localStorage
+
 // ===== Theme Management =====
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -55,6 +58,13 @@ function switchView(viewName) {
     if (targetView) {
         targetView.classList.add('active');
         pageTitle.textContent = viewTitles[viewName] || viewName;
+    }
+    
+    // Load data when switching to specific views
+    if (viewName === 'watchlist') {
+        loadWatchlist();
+    } else if (viewName === 'analytics') {
+        loadAnalyticsData();
     }
     
     // Close mobile sidebar
@@ -185,8 +195,44 @@ function displayPredictionResults(data) {
     // Update chart
     updatePriceChart(data.priceHistory);
     
+    // Save prediction to history in localStorage
+    savePredictionToHistory(data);
+    
     // Show results
     predictionResults.style.display = 'block';
+}
+
+function savePredictionToHistory(data) {
+    try {
+        // Get existing history from localStorage
+        const historyJson = localStorage.getItem('predictionHistory');
+        let history = historyJson ? JSON.parse(historyJson) : [];
+        
+        // Create history entry
+        const entry = {
+            timestamp: new Date().toISOString(),
+            stockCode: data.stockCode,
+            stockName: data.stockName,
+            currentPrice: data.currentPrice,
+            shortTermPrediction: data.shortTermPrediction,
+            mediumTermPrediction: data.mediumTermPrediction,
+            tradingAdvice: data.tradingAdvice,
+            accuracy: data.accuracy
+        };
+        
+        // Add to beginning of array (most recent first)
+        history.unshift(entry);
+        
+        // Keep only last MAX_PREDICTION_HISTORY predictions to avoid excessive storage
+        if (history.length > MAX_PREDICTION_HISTORY) {
+            history = history.slice(0, MAX_PREDICTION_HISTORY);
+        }
+        
+        // Save back to localStorage
+        localStorage.setItem('predictionHistory', JSON.stringify(history));
+    } catch (e) {
+        console.error('Error saving prediction to history:', e);
+    }
 }
 
 function updatePriceChart(historyData) {
@@ -377,11 +423,25 @@ function openAddStockModal() {
     if (modal) {
         modal.style.display = 'flex';
         // Clear previous values
-        document.getElementById('modalStockCode').value = '';
-        document.getElementById('modalTargetPrice').value = '';
-        document.getElementById('modalTargetDays').value = '';
+        const stockCodeInput = document.getElementById('modalStockCode');
+        if (stockCodeInput) {
+            stockCodeInput.value = '';
+        }
+        // Clear optional fields if they exist
+        const targetPriceInput = document.getElementById('modalTargetPrice');
+        if (targetPriceInput) {
+            targetPriceInput.value = '';
+        }
+        const targetDaysInput = document.getElementById('modalTargetDays');
+        if (targetDaysInput) {
+            targetDaysInput.value = '';
+        }
         // Focus on stock code input
-        setTimeout(() => document.getElementById('modalStockCode').focus(), 100);
+        setTimeout(() => {
+            if (stockCodeInput) {
+                stockCodeInput.focus();
+            }
+        }, 100);
     }
 }
 
@@ -560,46 +620,66 @@ async function loadWatchlist() {
     const tbody = document.getElementById('watchlistBody');
     if (!tbody) return;
     
+    // Try to load from cache first for instant display
+    const cachedData = localStorage.getItem('watchlistData');
+    if (cachedData) {
+        try {
+            const cached = JSON.parse(cachedData);
+            renderWatchlistData(cached, tbody);
+        } catch (e) {
+            console.error('Error parsing cached watchlist:', e);
+        }
+    }
+    
     try {
         const response = await fetch('/api/watchlist');
         const result = await response.json();
         
         if (result.success && result.data) {
-            tbody.innerHTML = '';
-            
-            if (result.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">观测池为空，点击上方"+"按钮添加股票</td></tr>';
-                return;
-            }
-            
-            result.data.forEach(stock => {
-                const changeClass = stock.change >= 0 ? 'positive' : 'negative';
-                const changeSign = stock.change >= 0 ? '+' : '';
-                const statusBadge = stock.change > 3 ? 'badge-success' : 
-                                   stock.change < -3 ? 'badge-danger' : 'badge-info';
-                const statusText = stock.change > 3 ? '强势' : 
-                                  stock.change < -3 ? '弱势' : '平稳';
-                
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><strong>${stock.code}</strong></td>
-                    <td>${stock.name || '-'}</td>
-                    <td>¥${stock.currentPrice ? stock.currentPrice.toFixed(2) : '-'}</td>
-                    <td class="${changeClass}">${changeSign}${stock.change ? stock.change.toFixed(2) : 0}%</td>
-                    <td><span class="badge ${statusBadge}">${statusText}</span></td>
-                    <td>
-                        <button class="btn-icon" title="预测分析" onclick="analyzePrediction('${stock.code}')"><span>📊</span></button>
-                        <button class="btn-icon" title="刷新" onclick="refreshWatchlistItem('${stock.code}')"><span>🔄</span></button>
-                        <button class="btn-icon" title="删除" onclick="removeFromWatchlist('${stock.code}')"><span>🗑️</span></button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
+            // Save to localStorage for persistence
+            localStorage.setItem('watchlistData', JSON.stringify(result.data));
+            renderWatchlistData(result.data, tbody);
         }
     } catch (error) {
         console.error('Error loading watchlist:', error);
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">加载失败</td></tr>';
+        // If we have cached data, keep showing it
+        if (!cachedData) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">加载失败</td></tr>';
+        }
     }
+}
+
+function renderWatchlistData(data, tbody) {
+    tbody.innerHTML = '';
+    
+    if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary);">观测池为空，点击上方"+"按钮添加股票</td></tr>';
+        return;
+    }
+    
+    data.forEach(stock => {
+        const changeClass = stock.change >= 0 ? 'positive' : 'negative';
+        const changeSign = stock.change >= 0 ? '+' : '';
+        const statusBadge = stock.change > 3 ? 'badge-success' : 
+                           stock.change < -3 ? 'badge-danger' : 'badge-info';
+        const statusText = stock.change > 3 ? '强势' : 
+                          stock.change < -3 ? '弱势' : '平稳';
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${stock.code}</strong></td>
+            <td>${stock.name || '-'}</td>
+            <td>¥${stock.currentPrice ? stock.currentPrice.toFixed(2) : '-'}</td>
+            <td class="${changeClass}">${changeSign}${stock.change ? stock.change.toFixed(2) : 0}%</td>
+            <td><span class="badge ${statusBadge}">${statusText}</span></td>
+            <td>
+                <button class="btn-icon" title="预测分析" onclick="analyzePrediction('${stock.code}')"><span>📊</span></button>
+                <button class="btn-icon" title="刷新" onclick="refreshWatchlistItem('${stock.code}')"><span>🔄</span></button>
+                <button class="btn-icon" title="删除" onclick="removeFromWatchlist('${stock.code}')"><span>🗑️</span></button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
 }
 
 async function removeFromWatchlist(stockCode) {
@@ -619,6 +699,8 @@ async function removeFromWatchlist(stockCode) {
         const result = await response.json();
         
         if (result.success) {
+            // Clear cache to force reload
+            localStorage.removeItem('watchlistData');
             await loadWatchlist();
         } else {
             alert(result.error || '删除失败');
@@ -670,37 +752,63 @@ async function refreshAnalytics() {
 }
 
 async function loadAnalyticsData() {
+    // Show loading indicator
+    showLoading();
+    
+    // Try to load from cache first for instant display
+    const cachedAnalytics = localStorage.getItem('analyticsData');
+    if (cachedAnalytics) {
+        try {
+            const cached = JSON.parse(cachedAnalytics);
+            renderAnalyticsData(cached);
+        } catch (e) {
+            console.error('Error parsing cached analytics:', e);
+        }
+    }
+    
     try {
         console.log('Loading analytics data...');
         const response = await fetch('/api/analytics');
         const data = await response.json();
         
         if (data.success || data.sectorHeat) {
-            drawSectorChart(data.sectorHeat);
-            drawSentimentChart(data.marketSentiment);
-            
-            // Draw heatmap with all sectors
-            if (data.allSectors && data.allSectors.length > 0) {
-                drawSectorHeatmap(data.allSectors);
-                // Update source tag
-                const sourceTag = document.getElementById('sectorSource');
-                if (sourceTag && data.allSectors[0]) {
-                    const source = data.allSectors[0].source || 'unknown';
-                    sourceTag.textContent = source === 'tonghuashun' ? '同花顺' : '东方财富';
-                }
-            }
-            
+            // Save to localStorage for persistence
+            localStorage.setItem('analyticsData', JSON.stringify(data));
+            renderAnalyticsData(data);
             console.log('✓ Analytics charts rendered');
         } else {
             console.error('Failed to load analytics data');
-            drawDemoSectorChart();
-            drawDemoSentimentChart();
+            if (!cachedAnalytics) {
+                drawDemoSectorChart();
+                drawDemoSentimentChart();
+            }
         }
     } catch (error) {
         console.error('Error loading analytics:', error);
-        // Draw demo charts if API fails
-        drawDemoSectorChart();
-        drawDemoSentimentChart();
+        // Draw demo charts if API fails and no cache
+        if (!cachedAnalytics) {
+            drawDemoSectorChart();
+            drawDemoSentimentChart();
+        }
+    } finally {
+        // Hide loading indicator
+        hideLoading();
+    }
+}
+
+function renderAnalyticsData(data) {
+    drawSectorChart(data.sectorHeat);
+    drawSentimentChart(data.marketSentiment);
+    
+    // Draw heatmap with all sectors
+    if (data.allSectors && data.allSectors.length > 0) {
+        drawSectorHeatmap(data.allSectors);
+        // Update source tag
+        const sourceTag = document.getElementById('sectorSource');
+        if (sourceTag && data.allSectors[0]) {
+            const source = data.allSectors[0].source || 'unknown';
+            sourceTag.textContent = source === 'tonghuashun' ? '同花顺' : '东方财富';
+        }
     }
 }
 
