@@ -941,11 +941,14 @@ function calculateTreemapLayout(sectors, width, height) {
     
     // Normalize weights to total area
     const totalArea = width * height;
-    const sectorsWithArea = sectors.map(s => ({
-        ...s,
-        weight: Math.max(1, Math.abs(s.change) + 1),
-        area: (Math.max(1, Math.abs(s.change) + 1) / totalWeight) * totalArea
-    }));
+    const sectorsWithArea = sectors.map(s => {
+        const weight = Math.max(1, Math.abs(s.change) + 1);
+        return {
+            ...s,
+            weight: weight,
+            area: (weight / totalWeight) * totalArea
+        };
+    });
     
     // Squarify layout
     const cells = squarify(sectorsWithArea, 0, 0, width, height);
