@@ -929,36 +929,48 @@ function drawSectorTreemap(sectors) {
     container.innerHTML = html;
 }
 
+// Constants for treemap layout calculation
+const TREEMAP_CONFIG = {
+    DEFAULT_STOCKS_VALUE: 50,      // Default stocks count when not available
+    DEFAULT_HEAT_VALUE: 50,        // Default heat value when not available
+    NORMALIZATION_FACTOR: 10,      // Divider for stocks/heat normalization
+    MIN_SECTOR_WEIGHT: 5,          // Minimum weight per sector (prevents too-small cells)
+    MIN_CELL_AREA: 2500,           // Minimum cell area in px² (50x50px for readability)
+    MIN_CELL_WIDTH: 50,            // Minimum cell width in pixels
+    MIN_CELL_HEIGHT: 40            // Minimum cell height in pixels
+};
+
+// Helper function to calculate sector weight based on market metrics
+function calculateSectorWeight(sector) {
+    // Weight = normalized stocks count + normalized heat value
+    // This matches real stock market behavior where area represents market importance
+    const stockWeight = (sector.stocks || TREEMAP_CONFIG.DEFAULT_STOCKS_VALUE) / TREEMAP_CONFIG.NORMALIZATION_FACTOR;
+    const heatWeight = (sector.heat || TREEMAP_CONFIG.DEFAULT_HEAT_VALUE) / TREEMAP_CONFIG.NORMALIZATION_FACTOR;
+    const baseWeight = stockWeight + heatWeight;
+    
+    // Enforce minimum weight to ensure all sectors have reasonable display size
+    return Math.max(baseWeight, TREEMAP_CONFIG.MIN_SECTOR_WEIGHT);
+}
+
 // Calculate treemap layout using squarified algorithm
 function calculateTreemapLayout(sectors, width, height) {
     if (!sectors || sectors.length === 0) return [];
     
-    // Use stocks count and heat as primary weight factors (like real stock market heatmaps)
-    // Area should represent market size/importance, color represents change
-    const totalWeight = sectors.reduce((sum, s) => {
-        // Primary weight: stocks count (market size) + heat (market attention)
-        // This matches real stock market heatmap behavior where area = importance
-        const stockWeight = (s.stocks || 50) / 10;  // Normalize stocks
-        const heatWeight = (s.heat || 50) / 10;     // Normalize heat
-        const baseWeight = stockWeight + heatWeight; // Base weight from market metrics
-        
-        return sum + Math.max(baseWeight, 5); // Minimum weight of 5
-    }, 0);
+    // Calculate total weight across all sectors
+    const totalWeight = sectors.reduce((sum, s) => sum + calculateSectorWeight(s), 0);
     
     // Normalize weights to total area with minimum size enforcement
     const totalArea = width * height;
-    const minCellArea = 2500; // Minimum 50x50px area per cell for readability
     
     const sectorsWithArea = sectors.map(s => {
-        const stockWeight = (s.stocks || 50) / 10;
-        const heatWeight = (s.heat || 50) / 10;
-        const weight = Math.max(stockWeight + heatWeight, 5);
+        const weight = calculateSectorWeight(s);
         const idealArea = (weight / totalWeight) * totalArea;
         
         return {
             ...s,
             weight: weight,
-            area: Math.max(idealArea, minCellArea) // Enforce minimum area
+            // Enforce minimum area (50x40px = 2000px²) for readability
+            area: Math.max(idealArea, TREEMAP_CONFIG.MIN_CELL_AREA)
         };
     });
     
@@ -1030,8 +1042,8 @@ function squarify(items, x, y, width, height) {
                     ...item,
                     x: Math.round(cellX),
                     y: Math.round(currentY),
-                    w: Math.max(Math.round(cellWidth) - 2, 50), // Minimum 50px width
-                    h: Math.max(Math.round(rowHeight) - 2, 40)  // Minimum 40px height
+                    w: Math.max(Math.round(cellWidth) - 2, TREEMAP_CONFIG.MIN_CELL_WIDTH),
+                    h: Math.max(Math.round(rowHeight) - 2, TREEMAP_CONFIG.MIN_CELL_HEIGHT)
                 });
                 cellX += cellWidth;
             });
@@ -1049,8 +1061,8 @@ function squarify(items, x, y, width, height) {
                     ...item,
                     x: Math.round(currentX),
                     y: Math.round(cellY),
-                    w: Math.max(Math.round(rowWidth) - 2, 50),    // Minimum 50px width
-                    h: Math.max(Math.round(cellHeight) - 2, 40)   // Minimum 40px height
+                    w: Math.max(Math.round(rowWidth) - 2, TREEMAP_CONFIG.MIN_CELL_WIDTH),
+                    h: Math.max(Math.round(cellHeight) - 2, TREEMAP_CONFIG.MIN_CELL_HEIGHT)
                 });
                 cellY += cellHeight;
             });
