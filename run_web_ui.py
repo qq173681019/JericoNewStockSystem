@@ -12,6 +12,7 @@ from flask_cors import CORS
 import webbrowser
 import threading
 import pandas as pd
+from datetime import datetime, timedelta
 
 # Add project root to Python path
 ROOT_DIR = Path(__file__).parent
@@ -21,7 +22,6 @@ try:
     from src.utils import setup_logger
     from src.data_acquisition.multi_source_fetcher import MultiSourceDataFetcher
     from src.database.models import DatabaseManager
-    from datetime import datetime, timedelta
     logger = setup_logger(__name__)
     
     # Initialize data fetcher and database
@@ -529,6 +529,39 @@ def get_analytics():
                     'topCompanies': ['中国石油', '中国海油', '新能源'],
                     'color': '#F7DC6F'
                 }
+            ]
+            # Extended demo sectors for heatmap/treemap (including aerospace)
+            all_sectors = sectors_info + [
+                {'name': '航天航空', 'heat': 68, 'stocks': 42, 'change': 1.5, 'source': 'demo'},
+                {'name': '商业航天', 'heat': 72, 'stocks': 28, 'change': 2.8, 'source': 'demo'},
+                {'name': '房地产', 'heat': 35, 'stocks': 98, 'change': -2.1, 'source': 'demo'},
+                {'name': '交通运输', 'heat': 58, 'stocks': 76, 'change': 0.3, 'source': 'demo'},
+                {'name': '建筑建材', 'heat': 52, 'stocks': 115, 'change': -0.8, 'source': 'demo'},
+                {'name': '钢铁', 'heat': 48, 'stocks': 67, 'change': -1.5, 'source': 'demo'},
+                {'name': '有色金属', 'heat': 61, 'stocks': 89, 'change': 0.9, 'source': 'demo'},
+                {'name': '化工', 'heat': 55, 'stocks': 134, 'change': -0.3, 'source': 'demo'},
+                {'name': '电力设备', 'heat': 78, 'stocks': 92, 'change': 2.3, 'source': 'demo'},
+                {'name': '新能源车', 'heat': 82, 'stocks': 71, 'change': 3.5, 'source': 'demo'},
+                {'name': '半导体', 'heat': 88, 'stocks': 65, 'change': 4.2, 'source': 'demo'},
+                {'name': '计算机', 'heat': 75, 'stocks': 108, 'change': 1.9, 'source': 'demo'},
+                {'name': '通信', 'heat': 63, 'stocks': 54, 'change': 0.7, 'source': 'demo'},
+                {'name': '电子', 'heat': 80, 'stocks': 145, 'change': 2.7, 'source': 'demo'},
+                {'name': '传媒', 'heat': 42, 'stocks': 62, 'change': -1.8, 'source': 'demo'},
+                {'name': '农林牧渔', 'heat': 38, 'stocks': 48, 'change': -2.5, 'source': 'demo'},
+                {'name': '食品饮料', 'heat': 72, 'stocks': 85, 'change': 1.6, 'source': 'demo'},
+                {'name': '纺织服装', 'heat': 33, 'stocks': 56, 'change': -3.2, 'source': 'demo'},
+                {'name': '轻工制造', 'heat': 46, 'stocks': 73, 'change': -1.1, 'source': 'demo'},
+                {'name': '商贸零售', 'heat': 51, 'stocks': 68, 'change': -0.4, 'source': 'demo'},
+                {'name': '银行', 'heat': 69, 'stocks': 52, 'change': 1.3, 'source': 'demo'},
+                {'name': '非银金融', 'heat': 65, 'stocks': 78, 'change': 1.1, 'source': 'demo'},
+                {'name': '汽车', 'heat': 71, 'stocks': 95, 'change': 1.8, 'source': 'demo'},
+                {'name': '机械设备', 'heat': 57, 'stocks': 124, 'change': 0.2, 'source': 'demo'},
+                {'name': '国防军工', 'heat': 66, 'stocks': 38, 'change': 1.4, 'source': 'demo'},
+                {'name': '环保', 'heat': 44, 'stocks': 61, 'change': -1.6, 'source': 'demo'},
+                {'name': '美容护理', 'heat': 59, 'stocks': 32, 'change': 0.6, 'source': 'demo'},
+                {'name': '家用电器', 'heat': 54, 'stocks': 47, 'change': -0.2, 'source': 'demo'},
+                {'name': '社会服务', 'heat': 49, 'stocks': 55, 'change': -0.9, 'source': 'demo'},
+                {'name': '煤炭', 'heat': 47, 'stocks': 43, 'change': -1.3, 'source': 'demo'}
             ]
         
         sectors_data = {
