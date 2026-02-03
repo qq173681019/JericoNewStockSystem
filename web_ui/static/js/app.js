@@ -889,8 +889,10 @@ function drawSectorTreemap(sectors) {
     const container = document.getElementById('sectorTreemap');
     if (!container) return;
     
-    // Use clientWidth for more accurate width (excludes scrollbar)
-    const width = container.clientWidth || container.offsetWidth || 800;
+    // Use clientWidth for more accurate width (excludes scrollbar and padding)
+    // Subtract a small buffer to prevent horizontal overflow
+    const rawWidth = container.clientWidth || container.offsetWidth || 800;
+    const width = rawWidth - 2; // Subtract 2px to account for potential borders
     // Determine if mobile based on viewport width, not just container width
     const isMobile = window.innerWidth < 768;
     
@@ -1013,8 +1015,9 @@ function handleTreemapCellClick(cellElement, cellData, event) {
     const threshold = isMobile ? TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA_MOBILE : TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA;
     
     // Only enlarge small cells using configured threshold
+    // Small cells have area LESS THAN threshold - fixed logic
     if (area >= threshold && !cellElement.classList.contains('enlarged')) {
-        return; // Don't enlarge large cells
+        return; // Don't enlarge large cells - they're already readable
     }
     
     // If this cell is already enlarged, un-enlarge it
@@ -1066,16 +1069,16 @@ const TREEMAP_CONFIG = {
     DEFAULT_STOCKS_VALUE: 50,      // Default stocks count when not available
     DEFAULT_HEAT_VALUE: 50,        // Default heat value when not available
     NORMALIZATION_FACTOR: 10,      // Divider for stocks/heat normalization
-    MIN_SECTOR_WEIGHT: 5,          // Minimum weight per sector (prevents too-small cells)
+    MIN_SECTOR_WEIGHT: 3,          // Minimum weight per sector (reduced to allow smaller cells)
     MIN_CELL_AREA_DESKTOP: 2500,   // Minimum cell area in px² for desktop (50x50px)
-    MIN_CELL_AREA_MOBILE: 300,     // Minimum cell area in px² for mobile (17x17px - smaller to fit all)
+    MIN_CELL_AREA_MOBILE: 200,     // Minimum cell area in px² for mobile (reduced from 300 to ~14x14px)
     MIN_CELL_WIDTH_DESKTOP: 50,    // Minimum cell width in pixels for desktop
-    MIN_CELL_WIDTH_MOBILE: 17,     // Minimum cell width in pixels for mobile (smaller to fit all sectors)
+    MIN_CELL_WIDTH_MOBILE: 14,     // Minimum cell width in pixels for mobile (reduced from 17px)
     MIN_CELL_HEIGHT_DESKTOP: 40,   // Minimum cell height in pixels for desktop
-    MIN_CELL_HEIGHT_MOBILE: 17,    // Minimum cell height in pixels for mobile (smaller to fit all sectors)
+    MIN_CELL_HEIGHT_MOBILE: 14,    // Minimum cell height in pixels for mobile (reduced from 17px)
     MOBILE_WIDTH_THRESHOLD: 768,   // Screen width threshold for mobile
     ENLARGE_THRESHOLD_AREA: 5000,  // Cell area threshold for enlarge feature (px²) - desktop
-    ENLARGE_THRESHOLD_AREA_MOBILE: 2000, // Cell area threshold for enlarge on mobile (px² - increased so more cells enlarge)
+    ENLARGE_THRESHOLD_AREA_MOBILE: 3000, // Cell area threshold for enlarge on mobile (increased from 2000 so more cells are enlargeable)
     ENLARGE_SCALE_FACTOR: 2.5,     // Scale factor when enlarging small cells
     // Dynamic height calculation constants
     MIN_MOBILE_HEIGHT: 1200,       // Minimum treemap height on mobile (px)
