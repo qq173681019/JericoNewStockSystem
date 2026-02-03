@@ -941,6 +941,8 @@ tbody tr:hover {
     
     .sector-treemap {
         height: 800px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     
     .source-tag,
@@ -1209,7 +1211,8 @@ tbody tr:hover {
     position: relative;
     background: var(--bg-tertiary);
     border-radius: 8px;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .treemap-cell {
@@ -1220,7 +1223,7 @@ tbody tr:hover {
     align-items: center;
     overflow: hidden;
     cursor: pointer;
-    transition: filter 0.2s, z-index 0.1s;
+    transition: filter 0.2s, z-index 0.1s, transform 0.3s;
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-sizing: border-box;
 }
@@ -1229,6 +1232,15 @@ tbody tr:hover {
     filter: brightness(1.15);
     z-index: 100;
     border: 2px solid white;
+}
+
+.treemap-cell.enlarged {
+    position: fixed !important;
+    transform: scale(2.5);
+    z-index: 1000 !important;
+    border: 3px solid white;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    filter: brightness(1.2);
 }
 
 .treemap-cell .cell-name {
@@ -1242,6 +1254,12 @@ tbody tr:hover {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+}
+
+.treemap-cell.enlarged .cell-name {
+    white-space: normal;
+    overflow: visible;
+    word-wrap: break-word;
 }
 
 .treemap-cell .cell-change {
