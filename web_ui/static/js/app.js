@@ -900,11 +900,17 @@ function drawSectorTreemap(sectors) {
     let height;
     if (isMobile) {
         // Mobile: calculate based on sectors count with minimum height per sector
-        // Aim for ~60-80 px per sector on average, with min/max bounds
-        height = Math.max(1200, Math.min(2400, sectorsCount * 70));
+        // Allocate 70px per sector on average, with min/max bounds
+        height = Math.max(
+            TREEMAP_CONFIG.MIN_MOBILE_HEIGHT, 
+            Math.min(TREEMAP_CONFIG.MAX_MOBILE_HEIGHT, sectorsCount * TREEMAP_CONFIG.MOBILE_HEIGHT_PER_SECTOR)
+        );
     } else {
-        // Desktop: also scale with sector count but less aggressively
-        height = Math.max(500, Math.min(800, sectorsCount * 30));
+        // Desktop: also scale with sector count but less aggressively (30px per sector)
+        height = Math.max(
+            TREEMAP_CONFIG.MIN_DESKTOP_HEIGHT, 
+            Math.min(TREEMAP_CONFIG.MAX_DESKTOP_HEIGHT, sectorsCount * TREEMAP_CONFIG.DESKTOP_HEIGHT_PER_SECTOR)
+        );
     }
     
     // Sort by sector weight (market size) for better treemap layout
@@ -981,6 +987,7 @@ function initTreemapEventHandlers() {
             enlargedCell.element.classList.remove('enlarged');
             enlargedCell.element.style.position = 'absolute';
             enlargedCell.element.style.transform = '';
+            enlargedCell.element.style.zIndex = '';
             enlargedCell.element.style.left = prevData.x + 'px';
             enlargedCell.element.style.top = prevData.y + 'px';
             enlargedCell = null;
@@ -1009,6 +1016,7 @@ function handleTreemapCellClick(cellElement, cellData, event) {
         cellElement.classList.remove('enlarged');
         cellElement.style.position = 'absolute';
         cellElement.style.transform = '';
+        cellElement.style.zIndex = '';
         cellElement.style.left = cellData.x + 'px';
         cellElement.style.top = cellData.y + 'px';
         enlargedCell = null;
@@ -1021,6 +1029,7 @@ function handleTreemapCellClick(cellElement, cellData, event) {
         enlargedCell.element.classList.remove('enlarged');
         enlargedCell.element.style.position = 'absolute';
         enlargedCell.element.style.transform = '';
+        enlargedCell.element.style.zIndex = '';
         enlargedCell.element.style.left = prevData.x + 'px';
         enlargedCell.element.style.top = prevData.y + 'px';
     }
@@ -1029,20 +1038,12 @@ function handleTreemapCellClick(cellElement, cellData, event) {
     cellElement.classList.add('enlarged');
     
     // Calculate positioning: center the enlarged cell in the visible viewport
-    const container = document.getElementById('sectorTreemap');
-    const containerRect = container.getBoundingClientRect();
-    
     // Get the center of the visible viewport area
     const viewportCenterX = window.innerWidth / 2;
     const viewportCenterY = window.innerHeight / 2;
     
-    // Calculate where to position the cell's center relative to the container's content area
-    // Account for container's scroll position and position in viewport
-    const targetX = viewportCenterX - containerRect.left + container.scrollLeft;
-    const targetY = viewportCenterY - containerRect.top + container.scrollTop;
-    
     // Position using fixed positioning to break out of scroll context
-    // The cell becomes fixed, so we need viewport coordinates
+    // The cell becomes fixed, so we use viewport coordinates directly
     cellElement.style.position = 'fixed';
     cellElement.style.left = viewportCenterX + 'px';
     cellElement.style.top = viewportCenterY + 'px';
@@ -1067,7 +1068,14 @@ const TREEMAP_CONFIG = {
     MIN_CELL_HEIGHT: 40,           // Minimum cell height in pixels
     MOBILE_WIDTH_THRESHOLD: 768,   // Screen width threshold for mobile
     ENLARGE_THRESHOLD_AREA: 5000,  // Cell area threshold for enlarge feature (px²)
-    ENLARGE_SCALE_FACTOR: 2.5      // Scale factor when enlarging small cells
+    ENLARGE_SCALE_FACTOR: 2.5,     // Scale factor when enlarging small cells
+    // Dynamic height calculation constants
+    MIN_MOBILE_HEIGHT: 1200,       // Minimum treemap height on mobile (px)
+    MAX_MOBILE_HEIGHT: 2400,       // Maximum treemap height on mobile (px)
+    MOBILE_HEIGHT_PER_SECTOR: 70,  // Height allocation per sector on mobile (px)
+    MIN_DESKTOP_HEIGHT: 500,       // Minimum treemap height on desktop (px)
+    MAX_DESKTOP_HEIGHT: 800,       // Maximum treemap height on desktop (px)
+    DESKTOP_HEIGHT_PER_SECTOR: 30  // Height allocation per sector on desktop (px)
 };
 
 // Helper function to calculate sector weight based on market metrics

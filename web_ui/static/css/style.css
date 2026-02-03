@@ -940,8 +940,7 @@ tbody tr:hover {
     }
     
     .sector-treemap {
-        min-height: 1200px; /* Higher minimum on mobile */
-        max-height: 2400px; /* Prevent excessive height */
+        /* Height is set dynamically by JavaScript based on sector count */
         overflow-y: auto;
         overflow-x: hidden;
         /* Better scrolling on mobile */
@@ -1210,7 +1209,7 @@ tbody tr:hover {
 /* ===== Treemap View ===== */
 .sector-treemap {
     width: 100%;
-    min-height: 500px; /* Minimum height, actual height set dynamically */
+    /* Height is set dynamically by JavaScript based on sector count */
     position: relative;
     background: var(--bg-tertiary);
     border-radius: 8px;
