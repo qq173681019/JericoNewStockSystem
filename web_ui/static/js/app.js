@@ -992,6 +992,7 @@ function squarify(items, x, y, width, height, minCellWidth) {
     if (items.length === 0) return [];
     
     // Use provided minCellWidth parameter for responsive layout
+    // Fallback to desktop default for backward compatibility (should not normally happen)
     const effectiveMinWidth = minCellWidth || TREEMAP_CONFIG.MIN_CELL_WIDTH_DESKTOP;
     
     const cells = [];
