@@ -530,10 +530,11 @@ def get_analytics():
                     'color': '#F7DC6F'
                 }
             ]
-            # Extended demo sectors for heatmap/treemap (including aerospace)
+            # Extended demo sectors for heatmap/treemap (including aerospace and precious metals)
             all_sectors = sectors_info + [
                 {'name': '航天航空', 'heat': 68, 'stocks': 42, 'change': 1.5, 'source': 'demo'},
                 {'name': '商业航天', 'heat': 72, 'stocks': 28, 'change': 2.8, 'source': 'demo'},
+                {'name': '贵金属', 'heat': 56, 'stocks': 35, 'change': 0.8, 'source': 'demo'},
                 {'name': '房地产', 'heat': 35, 'stocks': 98, 'change': -2.1, 'source': 'demo'},
                 {'name': '交通运输', 'heat': 58, 'stocks': 76, 'change': 0.3, 'source': 'demo'},
                 {'name': '建筑建材', 'heat': 52, 'stocks': 115, 'change': -0.8, 'source': 'demo'},
