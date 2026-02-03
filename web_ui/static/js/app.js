@@ -978,12 +978,11 @@ function calculateTreemapLayout(sectors, width, height) {
             ...s,
             weight: weight,
             // Enforce minimum area for readability (responsive based on device)
-            area: Math.max(idealArea, minCellArea),
-            minCellWidth: minCellWidth  // Pass to squarify for responsive layout
+            area: Math.max(idealArea, minCellArea)
         };
     });
     
-    // Squarify layout
+    // Squarify layout with responsive minimum cell width
     const cells = squarify(sectorsWithArea, 0, 0, width, height, minCellWidth);
     return cells;
 }
@@ -992,7 +991,7 @@ function calculateTreemapLayout(sectors, width, height) {
 function squarify(items, x, y, width, height, minCellWidth) {
     if (items.length === 0) return [];
     
-    // Use minCellWidth from first item, or fallback to desktop default
+    // Use provided minCellWidth parameter for responsive layout
     const effectiveMinWidth = minCellWidth || TREEMAP_CONFIG.MIN_CELL_WIDTH_DESKTOP;
     
     const cells = [];
