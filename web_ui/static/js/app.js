@@ -892,11 +892,11 @@ function drawSectorTreemap(sectors) {
     const width = container.offsetWidth || 800;
     const height = 500;
     
-    // Sort by absolute change (larger changes get more space)
+    // Sort by sector weight (market size) for better treemap layout
+    // This ensures larger sectors get more space, not just volatile ones
     const sortedSectors = [...sectors].sort((a, b) => {
-        // Weight by absolute change value - bigger movers get more space
-        const aWeight = Math.abs(a.change) + 1;
-        const bWeight = Math.abs(b.change) + 1;
+        const aWeight = calculateSectorWeight(a);
+        const bWeight = calculateSectorWeight(b);
         return bWeight - aWeight;
     });
     
@@ -1000,6 +1000,7 @@ function squarify(items, x, y, width, height) {
         let rowArea = 0;
         
         // Greedily add items to row while improving aspect ratio
+        let previousAspectRatio = Infinity;
         for (let i = 0; i < remaining.length; i++) {
             const item = remaining[i];
             const testRowArea = rowArea + item.area;
@@ -1012,14 +1013,24 @@ function squarify(items, x, y, width, height) {
                 isHorizontal ? remainingWidth : remainingHeight
             );
             
-            // If this is first item or aspect ratio improves, add it
-            // More strict limits to prevent thin strips
-            if (row.length === 0 || 
-                (row.length < 5 && aspectRatio < 2.5) || // Stricter limits for better shapes
-                remaining.length === 1) {
+            // Add item only if it improves aspect ratio
+            // Stop when aspect ratio starts getting worse
+            if (row.length === 0) {
+                // Always add first item
                 row.push(item);
                 rowArea = testRowArea;
+                previousAspectRatio = aspectRatio;
+            } else if (remaining.length === 1) {
+                // Add last item to avoid orphan
+                row.push(item);
+                rowArea = testRowArea;
+            } else if (aspectRatio <= previousAspectRatio) {
+                // Add if aspect ratio improves or stays same
+                row.push(item);
+                rowArea = testRowArea;
+                previousAspectRatio = aspectRatio;
             } else {
+                // Aspect ratio got worse, stop adding to this row
                 break;
             }
         }
