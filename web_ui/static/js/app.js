@@ -931,22 +931,48 @@ function drawSectorTreemap(sectors) {
     
     container.innerHTML = html;
     
-    // Add click handlers for enlarging small cells
-    const cellElements = container.querySelectorAll('.treemap-cell');
-    cellElements.forEach((cellEl, index) => {
-        cellEl.addEventListener('click', function(e) {
-            handleTreemapCellClick(cellEl, cells[index], e);
-        });
-    });
+    // Store cells data on container for event delegation
+    container._cellsData = cells;
 }
 
 // Handle click on treemap cell to enlarge if it's small
 let enlargedCell = null;
+
+// Initialize treemap event handlers (called on DOMContentLoaded)
+function initTreemapEventHandlers() {
+    const treemapContainer = document.getElementById('sectorTreemap');
+    if (!treemapContainer) return;
+    
+    // Use event delegation for better performance
+    treemapContainer.addEventListener('click', function(e) {
+        // If clicking on a cell, handle enlarge/un-enlarge
+        const cellElement = e.target.closest('.treemap-cell');
+        if (cellElement) {
+            const cellIndex = parseInt(cellElement.getAttribute('data-cell-index'));
+            if (!isNaN(cellIndex) && treemapContainer._cellsData) {
+                const cellData = treemapContainer._cellsData[cellIndex];
+                if (cellData) {
+                    handleTreemapCellClick(cellElement, cellData, e);
+                }
+            }
+        } else if (e.target === treemapContainer && enlargedCell) {
+            // If clicking on the container background, close any enlarged cell
+            const prevData = enlargedCell.data;
+            enlargedCell.element.classList.remove('enlarged');
+            enlargedCell.element.style.position = 'absolute';
+            enlargedCell.element.style.transform = '';
+            enlargedCell.element.style.left = prevData.x + 'px';
+            enlargedCell.element.style.top = prevData.y + 'px';
+            enlargedCell = null;
+        }
+    });
+}
+
 function handleTreemapCellClick(cellElement, cellData, event) {
     const area = cellData.w * cellData.h;
     
-    // Only enlarge small cells (area < 5000)
-    if (area >= 5000 && !cellElement.classList.contains('enlarged')) {
+    // Only enlarge small cells using configured threshold
+    if (area >= TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA && !cellElement.classList.contains('enlarged')) {
         return; // Don't enlarge large cells
     }
     
@@ -986,31 +1012,12 @@ function handleTreemapCellClick(cellElement, cellData, event) {
     
     cellElement.style.left = containerCenterX + 'px';
     cellElement.style.top = containerCenterY + 'px';
-    cellElement.style.transform = 'translate(-50%, -50%) scale(2.5)';
+    cellElement.style.transform = `translate(-50%, -50%) scale(${TREEMAP_CONFIG.ENLARGE_SCALE_FACTOR})`;
     
     enlargedCell = { element: cellElement, data: cellData };
     
     event.stopPropagation();
 }
-
-// Add click handler on container to close enlarged cell
-document.addEventListener('DOMContentLoaded', function() {
-    const treemapContainer = document.getElementById('sectorTreemap');
-    if (treemapContainer) {
-        treemapContainer.addEventListener('click', function(e) {
-            // If clicking on the container background (not a cell), close any enlarged cell
-            if (e.target === treemapContainer && enlargedCell) {
-                const prevData = enlargedCell.data;
-                enlargedCell.element.classList.remove('enlarged');
-                enlargedCell.element.style.position = 'absolute';
-                enlargedCell.element.style.transform = '';
-                enlargedCell.element.style.left = prevData.x + 'px';
-                enlargedCell.element.style.top = prevData.y + 'px';
-                enlargedCell = null;
-            }
-        });
-    }
-});
 
 // Constants for treemap layout calculation
 const TREEMAP_CONFIG = {
@@ -1023,7 +1030,9 @@ const TREEMAP_CONFIG = {
     MIN_CELL_WIDTH_DESKTOP: 50,    // Minimum cell width in pixels for desktop
     MIN_CELL_WIDTH_MOBILE: 28,     // Minimum cell width in pixels for mobile (reduced)
     MIN_CELL_HEIGHT: 40,           // Minimum cell height in pixels
-    MOBILE_WIDTH_THRESHOLD: 768    // Screen width threshold for mobile
+    MOBILE_WIDTH_THRESHOLD: 768,   // Screen width threshold for mobile
+    ENLARGE_THRESHOLD_AREA: 5000,  // Cell area threshold for enlarge feature (px²)
+    ENLARGE_SCALE_FACTOR: 2.5      // Scale factor when enlarging small cells
 };
 
 // Helper function to calculate sector weight based on market metrics
@@ -1532,6 +1541,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clearHistoryBtn) {
         clearHistoryBtn.addEventListener('click', clearHistory);
     }
+    
+    // Initialize treemap event handlers
+    initTreemapEventHandlers();
     
     // Pre-load watchlist data
     loadWatchlist();
