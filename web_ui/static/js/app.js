@@ -934,10 +934,11 @@ function drawSectorTreemap(sectors) {
         const color = getTreemapColor(change);
         const changeSign = change > 0 ? '+' : '';
         
-        // Determine size class for text visibility
+        // Determine size class for text visibility (mobile-responsive)
         const area = cell.w * cell.h;
         let sizeClass = '';
-        if (area < 2500) sizeClass = 'tiny';      // Below 50x50
+        if (area < 600) sizeClass = 'mini';        // Below ~24x24 - extra tiny for mobile
+        else if (area < 2500) sizeClass = 'tiny';  // Below 50x50
         else if (area < 5000) sizeClass = 'small'; // Below ~70x70
         
         html += `
@@ -1006,8 +1007,12 @@ function initTreemapEventHandlers() {
 function handleTreemapCellClick(cellElement, cellData, event) {
     const area = cellData.w * cellData.h;
     
+    // Determine threshold based on mobile or desktop
+    const isMobile = window.innerWidth < TREEMAP_CONFIG.MOBILE_WIDTH_THRESHOLD;
+    const threshold = isMobile ? TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA_MOBILE : TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA;
+    
     // Only enlarge small cells using configured threshold
-    if (area >= TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA && !cellElement.classList.contains('enlarged')) {
+    if (area >= threshold && !cellElement.classList.contains('enlarged')) {
         return; // Don't enlarge large cells
     }
     
@@ -1062,12 +1067,14 @@ const TREEMAP_CONFIG = {
     NORMALIZATION_FACTOR: 10,      // Divider for stocks/heat normalization
     MIN_SECTOR_WEIGHT: 5,          // Minimum weight per sector (prevents too-small cells)
     MIN_CELL_AREA_DESKTOP: 2500,   // Minimum cell area in px² for desktop (50x50px)
-    MIN_CELL_AREA_MOBILE: 800,     // Minimum cell area in px² for mobile (reduced for more sectors)
+    MIN_CELL_AREA_MOBILE: 400,     // Minimum cell area in px² for mobile (20x20px - much smaller for fitting)
     MIN_CELL_WIDTH_DESKTOP: 50,    // Minimum cell width in pixels for desktop
-    MIN_CELL_WIDTH_MOBILE: 28,     // Minimum cell width in pixels for mobile (reduced)
-    MIN_CELL_HEIGHT: 40,           // Minimum cell height in pixels
+    MIN_CELL_WIDTH_MOBILE: 20,     // Minimum cell width in pixels for mobile (very small to fit width)
+    MIN_CELL_HEIGHT_DESKTOP: 40,   // Minimum cell height in pixels for desktop
+    MIN_CELL_HEIGHT_MOBILE: 20,    // Minimum cell height in pixels for mobile (smaller for compact layout)
     MOBILE_WIDTH_THRESHOLD: 768,   // Screen width threshold for mobile
-    ENLARGE_THRESHOLD_AREA: 5000,  // Cell area threshold for enlarge feature (px²)
+    ENLARGE_THRESHOLD_AREA: 5000,  // Cell area threshold for enlarge feature (px²) - desktop
+    ENLARGE_THRESHOLD_AREA_MOBILE: 1500, // Cell area threshold for enlarge on mobile (px²) - more cells enlargeable
     ENLARGE_SCALE_FACTOR: 2.5,     // Scale factor when enlarging small cells
     // Dynamic height calculation constants
     MIN_MOBILE_HEIGHT: 1200,       // Minimum treemap height on mobile (px)
@@ -1098,6 +1105,7 @@ function calculateTreemapLayout(sectors, width, height) {
     const isMobile = width < TREEMAP_CONFIG.MOBILE_WIDTH_THRESHOLD;
     const minCellArea = isMobile ? TREEMAP_CONFIG.MIN_CELL_AREA_MOBILE : TREEMAP_CONFIG.MIN_CELL_AREA_DESKTOP;
     const minCellWidth = isMobile ? TREEMAP_CONFIG.MIN_CELL_WIDTH_MOBILE : TREEMAP_CONFIG.MIN_CELL_WIDTH_DESKTOP;
+    const minCellHeight = isMobile ? TREEMAP_CONFIG.MIN_CELL_HEIGHT_MOBILE : TREEMAP_CONFIG.MIN_CELL_HEIGHT_DESKTOP;
     
     // Calculate total weight across all sectors
     const totalWeight = sectors.reduce((sum, s) => sum + calculateSectorWeight(s), 0);
@@ -1117,18 +1125,19 @@ function calculateTreemapLayout(sectors, width, height) {
         };
     });
     
-    // Squarify layout with responsive minimum cell width
-    const cells = squarify(sectorsWithArea, 0, 0, width, height, minCellWidth);
+    // Squarify layout with responsive minimum cell dimensions
+    const cells = squarify(sectorsWithArea, 0, 0, width, height, minCellWidth, minCellHeight);
     return cells;
 }
 
 // Squarified treemap algorithm for better aspect ratios
-function squarify(items, x, y, width, height, minCellWidth) {
+function squarify(items, x, y, width, height, minCellWidth, minCellHeight) {
     if (items.length === 0) return [];
     
-    // Use provided minCellWidth parameter for responsive layout
-    // Fallback to desktop default for backward compatibility (should not normally happen)
+    // Use provided parameters for responsive layout
+    // Fallback to desktop defaults for backward compatibility (should not normally happen)
     const effectiveMinWidth = minCellWidth || TREEMAP_CONFIG.MIN_CELL_WIDTH_DESKTOP;
+    const effectiveMinHeight = minCellHeight || TREEMAP_CONFIG.MIN_CELL_HEIGHT_DESKTOP;
     
     const cells = [];
     let remaining = [...items];
@@ -1201,7 +1210,7 @@ function squarify(items, x, y, width, height, minCellWidth) {
                     x: Math.round(cellX),
                     y: Math.round(currentY),
                     w: Math.max(Math.round(cellWidth) - 2, effectiveMinWidth),
-                    h: Math.max(Math.round(rowHeight) - 2, TREEMAP_CONFIG.MIN_CELL_HEIGHT)
+                    h: Math.max(Math.round(rowHeight) - 2, effectiveMinHeight)
                 });
                 cellX += cellWidth;
             });
@@ -1220,7 +1229,7 @@ function squarify(items, x, y, width, height, minCellWidth) {
                     x: Math.round(currentX),
                     y: Math.round(cellY),
                     w: Math.max(Math.round(rowWidth) - 2, effectiveMinWidth),
-                    h: Math.max(Math.round(cellHeight) - 2, TREEMAP_CONFIG.MIN_CELL_HEIGHT)
+                    h: Math.max(Math.round(cellHeight) - 2, effectiveMinHeight)
                 });
                 cellY += cellHeight;
             });

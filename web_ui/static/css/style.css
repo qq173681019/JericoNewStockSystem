@@ -947,6 +947,24 @@ tbody tr:hover {
         -webkit-overflow-scrolling: touch;
     }
     
+    /* Mobile: even smaller text for tiny cells to fit more content */
+    .treemap-cell.tiny .cell-name {
+        font-size: 0.5rem;
+    }
+    
+    .treemap-cell.tiny .cell-change {
+        font-size: 0.45rem;
+    }
+    
+    /* Mobile: very small text for extra tiny cells */
+    .treemap-cell.mini .cell-name {
+        font-size: 0.4rem;
+    }
+    
+    .treemap-cell.mini .cell-change {
+        font-size: 0.35rem;
+    }
+    
     .source-tag,
     .count-tag {
         font-size: 0.65rem;
