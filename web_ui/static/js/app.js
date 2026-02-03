@@ -938,7 +938,11 @@ function drawSectorTreemap(sectors) {
 // Handle click on treemap cell to enlarge if it's small
 let enlargedCell = null;
 
-// Initialize treemap event handlers (called on DOMContentLoaded)
+/**
+ * Initialize treemap event handlers using event delegation for better performance.
+ * Should be called on DOMContentLoaded to set up click handlers for cell enlargement.
+ * Uses event delegation to handle all cell clicks with a single listener on the container.
+ */
 function initTreemapEventHandlers() {
     const treemapContainer = document.getElementById('sectorTreemap');
     if (!treemapContainer) return;
@@ -968,6 +972,14 @@ function initTreemapEventHandlers() {
     });
 }
 
+/**
+ * Handle click on treemap cell to enlarge or un-enlarge it.
+ * Small cells (area < ENLARGE_THRESHOLD_AREA) can be enlarged for better text visibility.
+ * 
+ * @param {HTMLElement} cellElement - The DOM element of the clicked cell
+ * @param {Object} cellData - The cell's data including position (x, y) and size (w, h)
+ * @param {Event} event - The click event object
+ */
 function handleTreemapCellClick(cellElement, cellData, event) {
     const area = cellData.w * cellData.h;
     

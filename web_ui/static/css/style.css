@@ -1235,6 +1235,11 @@ tbody tr:hover {
 }
 
 .treemap-cell.enlarged {
+    /* Using !important here is necessary because:
+     * 1. The cell's inline styles (position, transform) must be overridden for enlargement
+     * 2. The enlarged cell needs to break out of the absolute positioning context
+     * 3. Must guarantee fixed positioning and z-index for proper overlay effect
+     */
     position: fixed !important;
     transform: scale(2.5);
     z-index: 1000 !important;
