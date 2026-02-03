@@ -889,10 +889,23 @@ function drawSectorTreemap(sectors) {
     const container = document.getElementById('sectorTreemap');
     if (!container) return;
     
-    const width = container.offsetWidth || 800;
-    // Increase height on mobile for better vertical display (reduces horizontal scrolling)
-    const isMobile = width < 768;
-    const height = isMobile ? 1200 : 500; // Increased mobile height for better scrolling
+    // Use clientWidth for more accurate width (excludes scrollbar)
+    const width = container.clientWidth || container.offsetWidth || 800;
+    // Determine if mobile based on viewport width, not just container width
+    const isMobile = window.innerWidth < 768;
+    
+    // Calculate dynamic height based on number of sectors and available area
+    // More sectors = need more height, especially on mobile
+    const sectorsCount = sectors.length;
+    let height;
+    if (isMobile) {
+        // Mobile: calculate based on sectors count with minimum height per sector
+        // Aim for ~60-80 px per sector on average, with min/max bounds
+        height = Math.max(1200, Math.min(2400, sectorsCount * 70));
+    } else {
+        // Desktop: also scale with sector count but less aggressively
+        height = Math.max(500, Math.min(800, sectorsCount * 30));
+    }
     
     // Sort by sector weight (market size) for better treemap layout
     // This ensures larger sectors get more space, not just volatile ones
@@ -904,6 +917,9 @@ function drawSectorTreemap(sectors) {
     
     // Simple treemap layout algorithm (squarified-like)
     const cells = calculateTreemapLayout(sortedSectors, width, height);
+    
+    // Set container height to accommodate all cells
+    container.style.height = height + 'px';
     
     // Generate treemap cells
     let html = '';
@@ -1012,19 +1028,26 @@ function handleTreemapCellClick(cellElement, cellData, event) {
     // Enlarge this cell
     cellElement.classList.add('enlarged');
     
-    // Center the enlarged cell in viewport
+    // Calculate positioning: center the enlarged cell in the visible viewport
     const container = document.getElementById('sectorTreemap');
     const containerRect = container.getBoundingClientRect();
+    
+    // Get the center of the visible viewport area
     const viewportCenterX = window.innerWidth / 2;
     const viewportCenterY = window.innerHeight / 2;
     
-    // Convert to container-relative coordinates
-    const containerCenterX = viewportCenterX - containerRect.left + container.scrollLeft;
-    const containerCenterY = viewportCenterY - containerRect.top + container.scrollTop;
+    // Calculate where to position the cell's center relative to the container's content area
+    // Account for container's scroll position and position in viewport
+    const targetX = viewportCenterX - containerRect.left + container.scrollLeft;
+    const targetY = viewportCenterY - containerRect.top + container.scrollTop;
     
-    cellElement.style.left = containerCenterX + 'px';
-    cellElement.style.top = containerCenterY + 'px';
+    // Position using fixed positioning to break out of scroll context
+    // The cell becomes fixed, so we need viewport coordinates
+    cellElement.style.position = 'fixed';
+    cellElement.style.left = viewportCenterX + 'px';
+    cellElement.style.top = viewportCenterY + 'px';
     cellElement.style.transform = `translate(-50%, -50%) scale(${TREEMAP_CONFIG.ENLARGE_SCALE_FACTOR})`;
+    cellElement.style.zIndex = '1000';
     
     enlargedCell = { element: cellElement, data: cellData };
     

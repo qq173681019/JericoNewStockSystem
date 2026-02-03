@@ -940,9 +940,12 @@ tbody tr:hover {
     }
     
     .sector-treemap {
-        height: 800px;
+        min-height: 1200px; /* Higher minimum on mobile */
+        max-height: 2400px; /* Prevent excessive height */
         overflow-y: auto;
         overflow-x: hidden;
+        /* Better scrolling on mobile */
+        -webkit-overflow-scrolling: touch;
     }
     
     .source-tag,
@@ -1207,12 +1210,14 @@ tbody tr:hover {
 /* ===== Treemap View ===== */
 .sector-treemap {
     width: 100%;
-    height: 500px;
+    min-height: 500px; /* Minimum height, actual height set dynamically */
     position: relative;
     background: var(--bg-tertiary);
     border-radius: 8px;
     overflow-y: auto;
     overflow-x: hidden;
+    /* Enable smooth scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
 }
 
 .treemap-cell {
