@@ -937,7 +937,8 @@ function drawSectorTreemap(sectors) {
         // Determine size class for text visibility (mobile-responsive)
         const area = cell.w * cell.h;
         let sizeClass = '';
-        if (area < 600) sizeClass = 'mini';        // Below ~25x25 - extra small cells
+        if (area < 400) sizeClass = 'micro';       // Below ~20x20 - ultra small cells
+        else if (area < 600) sizeClass = 'mini';   // Below ~25x25 - extra small cells
         else if (area < 2500) sizeClass = 'tiny';  // Below 50x50
         else if (area < 5000) sizeClass = 'small'; // Below ~70x70
         
@@ -1067,14 +1068,14 @@ const TREEMAP_CONFIG = {
     NORMALIZATION_FACTOR: 10,      // Divider for stocks/heat normalization
     MIN_SECTOR_WEIGHT: 5,          // Minimum weight per sector (prevents too-small cells)
     MIN_CELL_AREA_DESKTOP: 2500,   // Minimum cell area in px² for desktop (50x50px)
-    MIN_CELL_AREA_MOBILE: 400,     // Minimum cell area in px² for mobile (20x20px)
+    MIN_CELL_AREA_MOBILE: 300,     // Minimum cell area in px² for mobile (17x17px - smaller to fit all)
     MIN_CELL_WIDTH_DESKTOP: 50,    // Minimum cell width in pixels for desktop
-    MIN_CELL_WIDTH_MOBILE: 20,     // Minimum cell width in pixels for mobile
+    MIN_CELL_WIDTH_MOBILE: 17,     // Minimum cell width in pixels for mobile (smaller to fit all sectors)
     MIN_CELL_HEIGHT_DESKTOP: 40,   // Minimum cell height in pixels for desktop
-    MIN_CELL_HEIGHT_MOBILE: 20,    // Minimum cell height in pixels for mobile
+    MIN_CELL_HEIGHT_MOBILE: 17,    // Minimum cell height in pixels for mobile (smaller to fit all sectors)
     MOBILE_WIDTH_THRESHOLD: 768,   // Screen width threshold for mobile
     ENLARGE_THRESHOLD_AREA: 5000,  // Cell area threshold for enlarge feature (px²) - desktop
-    ENLARGE_THRESHOLD_AREA_MOBILE: 1500, // Cell area threshold for enlarge on mobile (px²)
+    ENLARGE_THRESHOLD_AREA_MOBILE: 2000, // Cell area threshold for enlarge on mobile (px² - increased so more cells enlarge)
     ENLARGE_SCALE_FACTOR: 2.5,     // Scale factor when enlarging small cells
     // Dynamic height calculation constants
     MIN_MOBILE_HEIGHT: 1200,       // Minimum treemap height on mobile (px)
@@ -1125,8 +1126,31 @@ function calculateTreemapLayout(sectors, width, height) {
         };
     });
     
+    // Calculate actual total area after enforcing minimums
+    const actualTotalArea = sectorsWithArea.reduce((sum, s) => sum + s.area, 0);
+    
+    // If total area exceeds container, scale down areas proportionally while respecting minimums
+    if (actualTotalArea > totalArea) {
+        const scale = totalArea / actualTotalArea;
+        sectorsWithArea.forEach(s => {
+            // Scale down but don't go below minimum
+            s.area = Math.max(s.area * scale, minCellArea * 0.8); // Allow 20% below minimum if necessary
+        });
+    }
+    
     // Squarify layout with responsive minimum cell dimensions
     const cells = squarify(sectorsWithArea, 0, 0, width, height, minCellWidth, minCellHeight);
+    
+    // Ensure no cells extend beyond container bounds
+    cells.forEach(cell => {
+        if (cell.x + cell.w > width) {
+            cell.w = Math.max(width - cell.x, minCellWidth);
+        }
+        if (cell.y + cell.h > height) {
+            cell.h = Math.max(height - cell.y, minCellHeight);
+        }
+    });
+    
     return cells;
 }
 

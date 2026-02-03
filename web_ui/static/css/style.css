@@ -965,6 +965,17 @@ tbody tr:hover {
         font-size: 0.35rem;
     }
     
+    /* Mobile: ultra small text for micro cells */
+    .treemap-cell.micro .cell-name {
+        font-size: 0.3rem;
+        line-height: 1;
+    }
+    
+    .treemap-cell.micro .cell-change {
+        font-size: 0.28rem;
+        line-height: 1;
+    }
+    
     .source-tag,
     .count-tag {
         font-size: 0.65rem;
