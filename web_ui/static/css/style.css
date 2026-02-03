@@ -940,9 +940,40 @@ tbody tr:hover {
     }
     
     .sector-treemap {
-        height: 800px;
+        /* Height is set dynamically by JavaScript based on sector count */
         overflow-y: auto;
         overflow-x: hidden;
+        /* Better scrolling on mobile */
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Mobile: even smaller text for tiny cells to fit more content */
+    .treemap-cell.tiny .cell-name {
+        font-size: 0.5rem;
+    }
+    
+    .treemap-cell.tiny .cell-change {
+        font-size: 0.45rem;
+    }
+    
+    /* Mobile: very small text for extra tiny cells */
+    .treemap-cell.mini .cell-name {
+        font-size: 0.4rem;
+    }
+    
+    .treemap-cell.mini .cell-change {
+        font-size: 0.35rem;
+    }
+    
+    /* Mobile: ultra small text for micro cells */
+    .treemap-cell.micro .cell-name {
+        font-size: 0.3rem;
+        line-height: 1;
+    }
+    
+    .treemap-cell.micro .cell-change {
+        font-size: 0.28rem;
+        line-height: 1;
     }
     
     .source-tag,
@@ -1207,12 +1238,14 @@ tbody tr:hover {
 /* ===== Treemap View ===== */
 .sector-treemap {
     width: 100%;
-    height: 500px;
+    /* Height is set dynamically by JavaScript based on sector count */
     position: relative;
     background: var(--bg-tertiary);
     border-radius: 8px;
     overflow-y: auto;
     overflow-x: hidden;
+    /* Enable smooth scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
 }
 
 .treemap-cell {
