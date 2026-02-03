@@ -892,7 +892,7 @@ function drawSectorTreemap(sectors) {
     const width = container.offsetWidth || 800;
     // Increase height on mobile for better vertical display (reduces horizontal scrolling)
     const isMobile = width < 768;
-    const height = isMobile ? 800 : 500;
+    const height = isMobile ? 1200 : 500; // Increased mobile height for better scrolling
     
     // Sort by sector weight (market size) for better treemap layout
     // This ensures larger sectors get more space, not just volatile ones
@@ -907,7 +907,7 @@ function drawSectorTreemap(sectors) {
     
     // Generate treemap cells
     let html = '';
-    cells.forEach(cell => {
+    cells.forEach((cell, index) => {
         const change = cell.change || 0;
         const color = getTreemapColor(change);
         const changeSign = change > 0 ? '+' : '';
@@ -920,6 +920,7 @@ function drawSectorTreemap(sectors) {
         
         html += `
             <div class="treemap-cell ${sizeClass}" 
+                 data-cell-index="${index}"
                  style="left: ${cell.x}px; top: ${cell.y}px; width: ${cell.w}px; height: ${cell.h}px; background: ${color};"
                  title="${cell.name}: ${changeSign}${change}%\n热度: ${cell.heat}\n个股数: ${cell.stocks}">
                 <span class="cell-name">${cell.name}</span>
@@ -929,6 +930,105 @@ function drawSectorTreemap(sectors) {
     });
     
     container.innerHTML = html;
+    
+    // Store cells data on container for event delegation
+    container._cellsData = cells;
+}
+
+// Handle click on treemap cell to enlarge if it's small
+let enlargedCell = null;
+
+/**
+ * Initialize treemap event handlers using event delegation for better performance.
+ * Should be called on DOMContentLoaded to set up click handlers for cell enlargement.
+ * Uses event delegation to handle all cell clicks with a single listener on the container.
+ */
+function initTreemapEventHandlers() {
+    const treemapContainer = document.getElementById('sectorTreemap');
+    if (!treemapContainer) return;
+    
+    // Use event delegation for better performance
+    treemapContainer.addEventListener('click', function(e) {
+        // If clicking on a cell, handle enlarge/un-enlarge
+        const cellElement = e.target.closest('.treemap-cell');
+        if (cellElement) {
+            const cellIndex = parseInt(cellElement.getAttribute('data-cell-index'));
+            if (!isNaN(cellIndex) && treemapContainer._cellsData) {
+                const cellData = treemapContainer._cellsData[cellIndex];
+                if (cellData) {
+                    handleTreemapCellClick(cellElement, cellData, e);
+                }
+            }
+        } else if (e.target === treemapContainer && enlargedCell) {
+            // If clicking on the container background, close any enlarged cell
+            const prevData = enlargedCell.data;
+            enlargedCell.element.classList.remove('enlarged');
+            enlargedCell.element.style.position = 'absolute';
+            enlargedCell.element.style.transform = '';
+            enlargedCell.element.style.left = prevData.x + 'px';
+            enlargedCell.element.style.top = prevData.y + 'px';
+            enlargedCell = null;
+        }
+    });
+}
+
+/**
+ * Handle click on treemap cell to enlarge or un-enlarge it.
+ * Small cells (area < ENLARGE_THRESHOLD_AREA) can be enlarged for better text visibility.
+ * 
+ * @param {HTMLElement} cellElement - The DOM element of the clicked cell
+ * @param {Object} cellData - The cell's data including position (x, y) and size (w, h)
+ * @param {Event} event - The click event object
+ */
+function handleTreemapCellClick(cellElement, cellData, event) {
+    const area = cellData.w * cellData.h;
+    
+    // Only enlarge small cells using configured threshold
+    if (area >= TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA && !cellElement.classList.contains('enlarged')) {
+        return; // Don't enlarge large cells
+    }
+    
+    // If this cell is already enlarged, un-enlarge it
+    if (cellElement.classList.contains('enlarged')) {
+        cellElement.classList.remove('enlarged');
+        cellElement.style.position = 'absolute';
+        cellElement.style.transform = '';
+        cellElement.style.left = cellData.x + 'px';
+        cellElement.style.top = cellData.y + 'px';
+        enlargedCell = null;
+        return;
+    }
+    
+    // Un-enlarge any previously enlarged cell
+    if (enlargedCell) {
+        const prevData = enlargedCell.data;
+        enlargedCell.element.classList.remove('enlarged');
+        enlargedCell.element.style.position = 'absolute';
+        enlargedCell.element.style.transform = '';
+        enlargedCell.element.style.left = prevData.x + 'px';
+        enlargedCell.element.style.top = prevData.y + 'px';
+    }
+    
+    // Enlarge this cell
+    cellElement.classList.add('enlarged');
+    
+    // Center the enlarged cell in viewport
+    const container = document.getElementById('sectorTreemap');
+    const containerRect = container.getBoundingClientRect();
+    const viewportCenterX = window.innerWidth / 2;
+    const viewportCenterY = window.innerHeight / 2;
+    
+    // Convert to container-relative coordinates
+    const containerCenterX = viewportCenterX - containerRect.left + container.scrollLeft;
+    const containerCenterY = viewportCenterY - containerRect.top + container.scrollTop;
+    
+    cellElement.style.left = containerCenterX + 'px';
+    cellElement.style.top = containerCenterY + 'px';
+    cellElement.style.transform = `translate(-50%, -50%) scale(${TREEMAP_CONFIG.ENLARGE_SCALE_FACTOR})`;
+    
+    enlargedCell = { element: cellElement, data: cellData };
+    
+    event.stopPropagation();
 }
 
 // Constants for treemap layout calculation
@@ -938,11 +1038,13 @@ const TREEMAP_CONFIG = {
     NORMALIZATION_FACTOR: 10,      // Divider for stocks/heat normalization
     MIN_SECTOR_WEIGHT: 5,          // Minimum weight per sector (prevents too-small cells)
     MIN_CELL_AREA_DESKTOP: 2500,   // Minimum cell area in px² for desktop (50x50px)
-    MIN_CELL_AREA_MOBILE: 1200,    // Minimum cell area in px² for mobile (smaller for more sectors)
+    MIN_CELL_AREA_MOBILE: 800,     // Minimum cell area in px² for mobile (reduced for more sectors)
     MIN_CELL_WIDTH_DESKTOP: 50,    // Minimum cell width in pixels for desktop
-    MIN_CELL_WIDTH_MOBILE: 35,     // Minimum cell width in pixels for mobile
+    MIN_CELL_WIDTH_MOBILE: 28,     // Minimum cell width in pixels for mobile (reduced)
     MIN_CELL_HEIGHT: 40,           // Minimum cell height in pixels
-    MOBILE_WIDTH_THRESHOLD: 768    // Screen width threshold for mobile
+    MOBILE_WIDTH_THRESHOLD: 768,   // Screen width threshold for mobile
+    ENLARGE_THRESHOLD_AREA: 5000,  // Cell area threshold for enlarge feature (px²)
+    ENLARGE_SCALE_FACTOR: 2.5      // Scale factor when enlarging small cells
 };
 
 // Helper function to calculate sector weight based on market metrics
@@ -1124,18 +1226,20 @@ function calculateRowAspectRatio(row, rowArea, rowLength) {
 }
 
 // Get color for treemap (red for up, green for down - Chinese stock market convention)
+// Updated color scheme with 10 distinct levels for better mobile visibility
 function getTreemapColor(change) {
     // Red = up (rise), Green = down (fall) - Chinese stock market convention
-    if (change > 3) return '#C62828';      // Dark red - strong rise
-    if (change > 2) return '#E53935';      // Red
-    if (change > 1) return '#EF5350';      // Medium red
-    if (change > 0.5) return '#E57373';    // Light red
-    if (change > 0) return '#EF9A9A';      // Very light red
-    if (change > -0.5) return '#BDBDBD';   // Gray - flat
-    if (change > -1) return '#81C784';     // Very light green
-    if (change > -2) return '#66BB6A';     // Light green
-    if (change > -3) return '#43A047';     // Medium green
-    return '#1B5E20';                       // Dark green - strong fall
+    // 10 distinct color levels corresponding to the requested ranges
+    if (change >= 10) return '#8B0000';        // 黑红色 (Black-red) - >=10%
+    if (change >= 8) return '#B22222';         // 深红色 (Dark red) - 8-10%
+    if (change >= 5) return '#DC143C';         // 大红色 (Bright red) - 5-8%
+    if (change >= 2) return '#FF6B6B';         // 浅红色 (Light red) - 2-5%
+    if (change >= 1) return '#FFB3B3';         // 浅黄色调红 (Light yellowish red) - 1-2%
+    if (change > -1) return '#FFFFCC';         // 浅黄色/白色 (Light yellow/white) - -1% to 1%
+    if (change > -3) return '#C8E6C9';         // 浅绿色 (Light green) - -3% to -1%
+    if (change > -5) return '#81C784';         // 绿色 (Green) - -5% to -3%
+    if (change > -8) return '#43A047';         // 深绿色 (Dark green) - -8% to -5%
+    return '#1B5E20';                           // 黑绿色 (Black-green) - <=-8%
 }
 
 // Get color based on change percentage (for grid view)
@@ -1449,6 +1553,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (clearHistoryBtn) {
         clearHistoryBtn.addEventListener('click', clearHistory);
     }
+    
+    // Initialize treemap event handlers
+    initTreemapEventHandlers();
     
     // Pre-load watchlist data
     loadWatchlist();
