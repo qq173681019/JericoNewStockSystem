@@ -890,7 +890,9 @@ function drawSectorTreemap(sectors) {
     if (!container) return;
     
     const width = container.offsetWidth || 800;
-    const height = 500;
+    // Increase height on mobile for better vertical display (reduces horizontal scrolling)
+    const isMobile = width < 768;
+    const height = isMobile ? 800 : 500;
     
     // Sort by sector weight (market size) for better treemap layout
     // This ensures larger sectors get more space, not just volatile ones
