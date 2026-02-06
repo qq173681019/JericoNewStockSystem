@@ -17,7 +17,13 @@ def test_export_import_watchlist():
     """Test exporting and importing watchlist"""
     # Create a temporary database for testing
     with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_db:
-        db_url = f"sqlite:///{tmp_db.name}"
+        tmp_db_path = tmp_db.name
+    
+    with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w') as tmp_export:
+        export_path = tmp_export.name
+    
+    try:
+        db_url = f"sqlite:///{tmp_db_path}"
         db_manager = DatabaseManager(database_url=db_url)
         
         # Add test data
@@ -38,9 +44,6 @@ def test_export_import_watchlist():
         )
         
         # Export watchlist
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w') as tmp_export:
-            export_path = tmp_export.name
-        
         result_path = db_manager.export_watchlist_to_json(export_path)
         assert Path(result_path).exists(), "Export file should exist"
         
@@ -73,18 +76,30 @@ def test_export_import_watchlist():
         assert '000001' in codes, "Should have 000001"
         assert '600000' in codes, "Should have 600000"
         
-        # Clean up
-        Path(tmp_db.name).unlink()
-        Path(export_path).unlink()
-        
         print("✅ All watchlist backup/restore tests passed!")
+    finally:
+        # Clean up in finally block to ensure cleanup even on failure
+        try:
+            Path(tmp_db_path).unlink()
+        except Exception:
+            pass
+        try:
+            Path(export_path).unlink()
+        except Exception:
+            pass
 
 
 def test_merge_import():
     """Test merging imported data with existing data"""
     # Create a temporary database for testing
     with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_db:
-        db_url = f"sqlite:///{tmp_db.name}"
+        tmp_db_path = tmp_db.name
+    
+    with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w', encoding='utf-8') as tmp_import:
+        import_path = tmp_import.name
+    
+    try:
+        db_url = f"sqlite:///{tmp_db_path}"
         db_manager = DatabaseManager(database_url=db_url)
         
         # Add initial data
@@ -122,9 +137,8 @@ def test_merge_import():
         ]
         
         # Save import data to file
-        with tempfile.NamedTemporaryFile(suffix='.json', delete=False, mode='w', encoding='utf-8') as tmp_import:
-            json.dump(import_data, tmp_import, ensure_ascii=False, indent=2)
-            import_path = tmp_import.name
+        with open(import_path, 'w', encoding='utf-8') as f:
+            json.dump(import_data, f, ensure_ascii=False, indent=2)
         
         # Import with merge
         count = db_manager.import_watchlist_from_json(import_path, merge=True)
@@ -144,18 +158,28 @@ def test_merge_import():
         new_item = next((item for item in watchlist if item.stock_code == '600000'), None)
         assert new_item is not None, "Should find new item"
         
-        # Clean up
-        Path(tmp_db.name).unlink()
-        Path(import_path).unlink()
-        
         print("✅ Merge import test passed!")
+    finally:
+        # Clean up
+        try:
+            Path(tmp_db_path).unlink()
+        except Exception:
+            pass
+        try:
+            Path(import_path).unlink()
+        except Exception:
+            pass
 
 
 def test_auto_backup():
     """Test automatic backup functionality"""
     # Create a temporary database for testing
     with tempfile.NamedTemporaryFile(suffix='.db', delete=False) as tmp_db:
-        db_url = f"sqlite:///{tmp_db.name}"
+        tmp_db_path = tmp_db.name
+    
+    backup_path = None
+    try:
+        db_url = f"sqlite:///{tmp_db_path}"
         db_manager = DatabaseManager(database_url=db_url)
         
         # Add test data
@@ -176,11 +200,18 @@ def test_auto_backup():
         assert len(backup_data) == 1, "Backup should have 1 item"
         assert backup_data[0]['stock_code'] == '000001', "Backup should contain correct data"
         
-        # Clean up
-        Path(tmp_db.name).unlink()
-        Path(backup_path).unlink()
-        
         print("✅ Auto backup test passed!")
+    finally:
+        # Clean up
+        try:
+            Path(tmp_db_path).unlink()
+        except Exception:
+            pass
+        if backup_path:
+            try:
+                Path(backup_path).unlink()
+            except Exception:
+                pass
 
 
 if __name__ == '__main__':

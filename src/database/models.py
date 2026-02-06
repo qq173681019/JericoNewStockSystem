@@ -370,7 +370,9 @@ class DatabaseManager:
                                 setattr(existing_item, key, value)
                         logger.info(f"Updated existing watchlist item: {item_data['stock_code']}")
                     else:
-                        continue  # Skip if replacing and item already exists (shouldn't happen)
+                        # In replace mode, existing items should not exist since we cleared the table
+                        logger.warning(f"Unexpected existing item in replace mode: {item_data['stock_code']}")
+                        continue
                 else:
                     # Create new item
                     new_item = Watchlist(

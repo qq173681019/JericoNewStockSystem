@@ -714,21 +714,26 @@ def import_watchlist():
         import tempfile
         temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, 
                                                  dir=str(DATA_DIR), encoding='utf-8')
+        temp_filepath = temp_file.name
         json.dump(watchlist_data, temp_file, ensure_ascii=False, indent=2)
         temp_file.close()
         
-        # Import from the temporary file
-        count = db_manager.import_watchlist_from_json(temp_file.name, merge=merge)
-        
-        # Clean up temporary file
-        Path(temp_file.name).unlink()
-        
-        logger.info(f"Imported {count} watchlist items")
-        return jsonify({
-            'success': True,
-            'message': f'已导入 {count} 个股票',
-            'count': count
-        })
+        try:
+            # Import from the temporary file
+            count = db_manager.import_watchlist_from_json(temp_filepath, merge=merge)
+            
+            logger.info(f"Imported {count} watchlist items")
+            return jsonify({
+                'success': True,
+                'message': f'已导入 {count} 个股票',
+                'count': count
+            })
+        finally:
+            # Clean up temporary file
+            try:
+                Path(temp_filepath).unlink()
+            except Exception as cleanup_error:
+                logger.warning(f"Failed to clean up temp file: {cleanup_error}")
     except Exception as e:
         logger.error(f"Import watchlist error: {str(e)}")
         return jsonify({

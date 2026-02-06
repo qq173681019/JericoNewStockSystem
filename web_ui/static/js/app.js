@@ -706,7 +706,9 @@ if (exportWatchlistBtn) {
                 const url = URL.createObjectURL(dataBlob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `watchlist_backup_${new Date().toISOString().split('T')[0]}.json`;
+                // Use consistent timestamp format with backend
+                const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+                link.download = `watchlist_backup_${timestamp}.json`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -754,8 +756,8 @@ if (importWatchlistBtn && importFileInput) {
                 try {
                     const data = JSON.parse(e.target.result);
                     
-                    // Ask user if they want to merge or replace
-                    const merge = confirm('是否合并导入？\n点击"确定"合并现有数据\n点击"取消"替换现有数据');
+                    // Ask user if they want to merge or replace with clearer message
+                    const merge = confirm('选择导入模式：\n\n点击"确定"= 合并模式（保留现有数据，更新重复项）\n点击"取消"= 替换模式（清空现有数据）\n\n建议选择"确定"进行合并');
                     
                     const response = await fetch('/api/watchlist/import', {
                         method: 'POST',
