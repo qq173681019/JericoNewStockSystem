@@ -18,6 +18,9 @@ requests>=2.31.0
 # Data acquisition
 akshare>=1.12.0
 
+# Machine Learning
+scikit-learn>=1.3.0
+
 # Database
 sqlalchemy>=2.0.0
 

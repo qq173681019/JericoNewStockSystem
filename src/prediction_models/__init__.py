@@ -1,7 +1,6 @@
 """
 SIAPS Prediction Models Package
 """
-# Placeholder for prediction models
-# Will be implemented in Phase 2
+from .multi_model_predictor import MultiModelPredictor
 
-__all__ = []
+__all__ = ['MultiModelPredictor']
