@@ -335,9 +335,9 @@ class MultiModelPredictor:
                     # 下降趋势，向支撑位移动
                     predicted = current + (next_support - current) * 0.3
                 else:
-                    # 横盘，小幅波动
-                    trend_price = current * (1 + trend * 0.5)
-                    predicted = trend_price
+                    # 横盘，小幅随机波动（-0.5% to +0.5%）
+                    fluctuation = (hash(f"{current}{i}") % 100 - 50) / 10000
+                    predicted = current * (1 + fluctuation)
                 
                 predictions.append(predicted)
                 current = predicted
@@ -395,7 +395,9 @@ class MultiModelPredictor:
             # 归一化标准差
             normalized_std = std_dev / mean_price
             
-            # 信心度: 1 - normalized_std，范围在0到1之间
+            # 信心度: 1 - normalized_std * 10
+            # 乘以10是为了将标准差放大到合适的范围，使信心度在0.5-0.95之间
+            # 当三个模型预测差异大时，normalized_std会增大，信心度降低
             confidence = max(0.5, min(0.95, 1 - normalized_std * 10))
             
             return confidence

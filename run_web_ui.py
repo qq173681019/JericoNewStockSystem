@@ -374,10 +374,14 @@ def predict_stock_multi_timeframe(stock_code):
         
         # Fallback if prediction failed or no data
         if prediction_result is None or 'error' in prediction_result:
+            # Log warning about using fallback data
+            logger.warning(f"Using fallback prediction for {stock_code} - real data unavailable")
+            
             if current_price is None:
+                # Use a demo price based on stock code hash for consistency
                 current_price = 10 + (hash(stock_code) % 50)
             
-            # Generate simple fallback prediction
+            # Generate simple fallback prediction with minimal change
             if timeframe == '1hour':
                 pred_points = 12
                 timeframe_label = '1小时'
@@ -388,9 +392,10 @@ def predict_stock_multi_timeframe(stock_code):
                 pred_points = 90
                 timeframe_label = '30天(3个月)'
             
+            # Simple linear prediction with small increments
             predicted_prices = [current_price * (1 + 0.01 * i) for i in range(pred_points)]
             price_changes = [1.0] * pred_points
-            confidence = 0.50
+            confidence = 0.50  # Low confidence for fallback data
             advice = '持有'
             direction = 'neutral'
         else:

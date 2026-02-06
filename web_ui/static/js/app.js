@@ -517,9 +517,13 @@ function highlightTimeframeCard(timeframe) {
         if (card.dataset.timeframe === timeframe) {
             card.style.borderColor = 'var(--primary-color)';
             card.style.transform = 'scale(1.02)';
+            card.style.backgroundColor = 'var(--bg-secondary)';
+            card.setAttribute('aria-selected', 'true');
         } else {
             card.style.borderColor = 'var(--border-color)';
             card.style.transform = 'scale(1)';
+            card.style.backgroundColor = 'var(--bg-primary)';
+            card.setAttribute('aria-selected', 'false');
         }
     });
     
