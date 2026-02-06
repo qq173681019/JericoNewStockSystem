@@ -46,12 +46,31 @@ for timeframe in ['1hour', '3day', '30day']:
     print(f"⏱️  {timeframe.upper()} 预测测试")
     print(f"{'='*60}")
     
+    # Expected number of predictions for each timeframe
+    expected_points = {'1hour': 12, '3day': 3, '30day': 90}
+    
     try:
-        result = predictor.predict_multi_timeframe(data.copy(), timeframe=timeframe)
+        result = predictor.predict_multi_timeframe(data, timeframe=timeframe)
         
         if 'error' in result:
             print(f"❌ 预测失败: {result['error']}")
             continue
+        
+        # Validate result structure
+        assert 'ensemble' in result, "缺少ensemble预测结果"
+        assert 'prices' in result['ensemble'], "缺少价格预测数据"
+        assert 'confidence' in result, "缺少信心度数据"
+        assert 'price_change_pcts' in result, "缺少价格变化百分比"
+        assert 'trading_signal' in result, "缺少交易信号"
+        
+        # Validate prediction length
+        ensemble_prices = result['ensemble']['prices']
+        assert len(ensemble_prices) == expected_points[timeframe], \
+            f"预测点数不匹配: 期望{expected_points[timeframe]}, 实际{len(ensemble_prices)}"
+        
+        # Validate confidence range
+        confidence = result['confidence']
+        assert 0 <= confidence <= 1, f"信心度超出范围: {confidence}"
             
         # 提取结果
         ensemble_prices = result['ensemble']['prices']
