@@ -270,6 +270,14 @@
                     <div class="card-header">
                         <h2>观测池管理</h2>
                         <div class="header-buttons">
+                            <button class="btn btn-secondary" id="exportWatchlistBtn" title="导出备份">
+                                <span>📥</span>
+                                导出
+                            </button>
+                            <button class="btn btn-secondary" id="importWatchlistBtn" title="导入备份">
+                                <span>📤</span>
+                                导入
+                            </button>
                             <button class="btn btn-secondary" id="refreshWatchlistBtn">
                                 <span>🔄</span>
                                 刷新数据
@@ -306,6 +314,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Hidden file input for import -->
+            <input type="file" id="importFileInput" accept=".json" style="display: none;" />
 
             <!-- History View -->
             <div class="view" id="historyView">
