@@ -376,6 +376,9 @@ async function runPrediction() {
             };
             
             displayPredictionResults(data);
+            
+            // Also load multi-timeframe predictions
+            loadMultiTimeframePredictions(stockCode);
         } else {
             alert(result.message || '预测失败，请稍后重试');
         }
@@ -388,6 +391,146 @@ async function runPrediction() {
         displayPredictionResults(data);
     } finally {
         hideLoading();
+    }
+}
+
+// Load multi-timeframe predictions
+async function loadMultiTimeframePredictions(stockCode) {
+    const timeframes = ['1hour', '3day', '30day'];
+    
+    for (const timeframe of timeframes) {
+        // Set loading state
+        setTimeframeLoading(timeframe, true);
+        
+        try {
+            const response = await fetch(`/api/predict/multi/${stockCode}?timeframe=${timeframe}`);
+            const result = await response.json();
+            
+            if (result.success) {
+                updateTimeframeCard(timeframe, result);
+            } else {
+                setTimeframeError(timeframe, result.message || '预测失败');
+            }
+        } catch (error) {
+            console.error(`Error loading ${timeframe} prediction:`, error);
+            setTimeframeError(timeframe, '网络错误');
+        } finally {
+            setTimeframeLoading(timeframe, false);
+        }
+    }
+}
+
+// Set timeframe card loading state
+function setTimeframeLoading(timeframe, isLoading) {
+    const statusElement = document.getElementById(`status${timeframe}`);
+    if (statusElement) {
+        if (isLoading) {
+            statusElement.textContent = '加载中...';
+            statusElement.className = 'timeframe-status loading';
+        } else {
+            statusElement.className = 'timeframe-status';
+        }
+    }
+}
+
+// Set timeframe card error state
+function setTimeframeError(timeframe, message) {
+    const statusElement = document.getElementById(`status${timeframe}`);
+    if (statusElement) {
+        statusElement.textContent = '失败';
+        statusElement.className = 'timeframe-status error';
+    }
+    
+    // Set placeholder values
+    const priceElement = document.getElementById(`price${timeframe}`);
+    const changeElement = document.getElementById(`change${timeframe}`);
+    const confidenceElement = document.getElementById(`confidence${timeframe}`);
+    
+    if (priceElement) priceElement.textContent = '--';
+    if (changeElement) changeElement.textContent = '--';
+    if (confidenceElement) confidenceElement.textContent = '--';
+}
+
+// Update timeframe card with prediction data
+function updateTimeframeCard(timeframe, data) {
+    // Update status
+    const statusElement = document.getElementById(`status${timeframe}`);
+    if (statusElement) {
+        statusElement.textContent = '✓';
+        statusElement.className = 'timeframe-status success';
+    }
+    
+    // Update price
+    const priceElement = document.getElementById(`price${timeframe}`);
+    if (priceElement && data.prediction && data.prediction.targetPrice) {
+        priceElement.textContent = `¥${data.prediction.targetPrice}`;
+    }
+    
+    // Update change
+    const changeElement = document.getElementById(`change${timeframe}`);
+    if (changeElement && data.prediction && data.prediction.expectedChange !== undefined) {
+        const change = data.prediction.expectedChange;
+        const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
+        changeElement.textContent = changeText;
+        
+        // Apply color based on direction
+        if (change > 0) {
+            changeElement.className = 'change-number positive';
+        } else if (change < 0) {
+            changeElement.className = 'change-number negative';
+        } else {
+            changeElement.className = 'change-number neutral';
+        }
+    }
+    
+    // Update confidence
+    const confidenceElement = document.getElementById(`confidence${timeframe}`);
+    if (confidenceElement && data.prediction && data.prediction.confidence !== undefined) {
+        const confidence = (data.prediction.confidence * 100).toFixed(0);
+        confidenceElement.textContent = `${confidence}%`;
+    }
+}
+
+// Timeframe button click handlers
+document.addEventListener('DOMContentLoaded', () => {
+    const timeframeButtons = document.querySelectorAll('.btn-timeframe');
+    
+    timeframeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Remove active class from all buttons
+            timeframeButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Add active class to clicked button
+            button.classList.add('active');
+            
+            // Optionally highlight the corresponding card
+            const timeframe = button.dataset.timeframe;
+            highlightTimeframeCard(timeframe);
+        });
+    });
+});
+
+// Highlight selected timeframe card
+function highlightTimeframeCard(timeframe) {
+    const cards = document.querySelectorAll('.timeframe-card');
+    cards.forEach(card => {
+        if (card.dataset.timeframe === timeframe) {
+            card.style.borderColor = 'var(--primary-color)';
+            card.style.transform = 'scale(1.02)';
+            card.style.backgroundColor = 'var(--bg-secondary)';
+            card.setAttribute('aria-selected', 'true');
+        } else {
+            card.style.borderColor = 'var(--border-color)';
+            card.style.transform = 'scale(1)';
+            card.style.backgroundColor = 'var(--bg-primary)';
+            card.setAttribute('aria-selected', 'false');
+        }
+    });
+    
+    // Scroll to card if needed
+    const selectedCard = document.querySelector(`.timeframe-card[data-timeframe="${timeframe}"]`);
+    if (selectedCard) {
+        selectedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
 

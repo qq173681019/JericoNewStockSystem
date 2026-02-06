@@ -1590,3 +1590,203 @@ tbody tr:hover {
         font-size: 1.1rem;
     }
 }
+
+/* ===== Multi-Timeframe Prediction Styles ===== */
+.timeframe-selector {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.timeframe-selector label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.timeframe-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-timeframe {
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-timeframe:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: var(--bg-secondary);
+}
+
+.btn-timeframe.active {
+    border-color: var(--primary-color);
+    background: var(--primary-color);
+    color: white;
+}
+
+.multi-timeframe-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.timeframe-card {
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.timeframe-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.timeframe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.timeframe-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timeframe-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.timeframe-status.loading {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+.timeframe-status.success {
+    background: rgba(34, 197, 94, 0.1);
+    color: var(--success-color);
+}
+
+.timeframe-status.error {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.timeframe-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.prediction-value,
+.prediction-change,
+.prediction-confidence {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+}
+
+.value-label,
+.change-label,
+.confidence-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.value-number {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.change-number {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.change-number.positive {
+    color: var(--success-color);
+}
+
+.change-number.negative {
+    color: var(--danger-color);
+}
+
+.change-number.neutral {
+    color: var(--text-secondary);
+}
+
+.confidence-number {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Loading state for timeframe cards */
+.timeframe-card.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.timeframe-card.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Responsive adjustments for timeframe */
+@media (max-width: 768px) {
+    .timeframe-selector {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .multi-timeframe-results {
+        grid-template-columns: 1fr;
+    }
+}
