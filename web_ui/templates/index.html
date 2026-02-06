@@ -94,6 +94,14 @@
                                     开始预测
                                 </button>
                             </div>
+                            <div class="timeframe-selector">
+                                <label>预测时间框架:</label>
+                                <div class="timeframe-buttons">
+                                    <button class="btn btn-timeframe" data-timeframe="1hour">1小时</button>
+                                    <button class="btn btn-timeframe active" data-timeframe="3day">3天</button>
+                                    <button class="btn btn-timeframe" data-timeframe="30day">30天</button>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="prediction-results" id="predictionResults" style="display: none;">
@@ -107,6 +115,73 @@
                                     </button>
                                 </div>
                             </div>
+                            
+                            <!-- Multi-timeframe prediction cards -->
+                            <div class="multi-timeframe-results" id="multiTimeframeResults">
+                                <div class="timeframe-card" data-timeframe="1hour">
+                                    <div class="timeframe-header">
+                                        <h3>⏱️ 1小时预测</h3>
+                                        <span class="timeframe-status" id="status1hour">--</span>
+                                    </div>
+                                    <div class="timeframe-content">
+                                        <div class="prediction-value">
+                                            <span class="value-label">预测价格</span>
+                                            <span class="value-number" id="price1hour">--</span>
+                                        </div>
+                                        <div class="prediction-change">
+                                            <span class="change-label">预期变化</span>
+                                            <span class="change-number" id="change1hour">--</span>
+                                        </div>
+                                        <div class="prediction-confidence">
+                                            <span class="confidence-label">信心度</span>
+                                            <span class="confidence-number" id="confidence1hour">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeframe-card" data-timeframe="3day">
+                                    <div class="timeframe-header">
+                                        <h3>📅 3天预测</h3>
+                                        <span class="timeframe-status" id="status3day">--</span>
+                                    </div>
+                                    <div class="timeframe-content">
+                                        <div class="prediction-value">
+                                            <span class="value-label">预测价格</span>
+                                            <span class="value-number" id="price3day">--</span>
+                                        </div>
+                                        <div class="prediction-change">
+                                            <span class="change-label">预期变化</span>
+                                            <span class="change-number" id="change3day">--</span>
+                                        </div>
+                                        <div class="prediction-confidence">
+                                            <span class="confidence-label">信心度</span>
+                                            <span class="confidence-number" id="confidence3day">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeframe-card" data-timeframe="30day">
+                                    <div class="timeframe-header">
+                                        <h3>📈 30天预测</h3>
+                                        <span class="timeframe-status" id="status30day">--</span>
+                                    </div>
+                                    <div class="timeframe-content">
+                                        <div class="prediction-value">
+                                            <span class="value-label">预测价格</span>
+                                            <span class="value-number" id="price30day">--</span>
+                                        </div>
+                                        <div class="prediction-change">
+                                            <span class="change-label">预期变化</span>
+                                            <span class="change-number" id="change30day">--</span>
+                                        </div>
+                                        <div class="prediction-confidence">
+                                            <span class="confidence-label">信心度</span>
+                                            <span class="confidence-number" id="confidence30day">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="results-grid">
                                 <div class="result-card">
                                     <div class="result-icon">
