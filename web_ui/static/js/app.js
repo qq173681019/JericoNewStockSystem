@@ -18,6 +18,14 @@ const quickSearch = document.getElementById('quickSearch');
 // ===== Configuration Constants =====
 const MAX_PREDICTION_HISTORY = 100; // Maximum number of prediction entries to keep in localStorage
 
+// Backup/Import messages
+const IMPORT_MODE_MESSAGE = '选择导入模式：\n\n点击"确定"= 合并模式（保留现有数据，更新重复项）\n点击"取消"= 替换模式（清空现有数据）\n\n建议选择"确定"进行合并';
+
+// Helper function for consistent timestamp format
+function formatTimestamp() {
+    return new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+}
+
 // ===== Theme Management =====
 function initTheme() {
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -707,8 +715,7 @@ if (exportWatchlistBtn) {
                 const link = document.createElement('a');
                 link.href = url;
                 // Use consistent timestamp format with backend
-                const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
-                link.download = `watchlist_backup_${timestamp}.json`;
+                link.download = `watchlist_backup_${formatTimestamp()}.json`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -757,7 +764,7 @@ if (importWatchlistBtn && importFileInput) {
                     const data = JSON.parse(e.target.result);
                     
                     // Ask user if they want to merge or replace with clearer message
-                    const merge = confirm('选择导入模式：\n\n点击"确定"= 合并模式（保留现有数据，更新重复项）\n点击"取消"= 替换模式（清空现有数据）\n\n建议选择"确定"进行合并');
+                    const merge = confirm(IMPORT_MODE_MESSAGE);
                     
                     const response = await fetch('/api/watchlist/import', {
                         method: 'POST',
