@@ -604,6 +604,13 @@ def manage_watchlist():
                 notes=data.get('notes')
             )
             
+            # Auto-backup after adding to watchlist
+            try:
+                db_manager.auto_backup_watchlist()
+                logger.info("Auto-backup created after adding to watchlist")
+            except Exception as backup_error:
+                logger.warning(f"Auto-backup failed: {backup_error}")
+            
             logger.info(f"Added {stock_code} ({stock_name}) to watchlist")
             
             return jsonify({
@@ -630,6 +637,13 @@ def manage_watchlist():
             success = db_manager.remove_from_watchlist(stock_code)
             
             if success:
+                # Auto-backup after removing from watchlist
+                try:
+                    db_manager.auto_backup_watchlist()
+                    logger.info("Auto-backup created after removing from watchlist")
+                except Exception as backup_error:
+                    logger.warning(f"Auto-backup failed: {backup_error}")
+                
                 logger.info(f"Removed {stock_code} from watchlist")
                 return jsonify({
                     'success': True,
@@ -643,6 +657,105 @@ def manage_watchlist():
             
     except Exception as e:
         logger.error(f"Watchlist error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/watchlist/export', methods=['GET'])
+def export_watchlist():
+    """
+    API endpoint to export watchlist to JSON
+    """
+    try:
+        if db_manager is None:
+            return jsonify({'success': False, 'error': 'Database not initialized'}), 500
+        
+        filepath = db_manager.export_watchlist_to_json()
+        
+        # Read the exported file and return as JSON
+        with open(filepath, 'r', encoding='utf-8') as f:
+            watchlist_data = json.load(f)
+        
+        logger.info(f"Exported {len(watchlist_data)} watchlist items")
+        return jsonify({
+            'success': True,
+            'data': watchlist_data,
+            'message': f'已导出 {len(watchlist_data)} 个股票',
+            'filepath': filepath
+        })
+    except Exception as e:
+        logger.error(f"Export watchlist error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/watchlist/import', methods=['POST'])
+def import_watchlist():
+    """
+    API endpoint to import watchlist from JSON
+    """
+    try:
+        if db_manager is None:
+            return jsonify({'success': False, 'error': 'Database not initialized'}), 500
+        
+        data = request.get_json()
+        watchlist_data = data.get('data', [])
+        merge = data.get('merge', True)  # Default to merge mode
+        
+        if not watchlist_data:
+            return jsonify({'success': False, 'error': '没有数据可导入'}), 400
+        
+        # Save to a temporary file
+        from config.settings import DATA_DIR
+        import tempfile
+        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, 
+                                                 dir=str(DATA_DIR), encoding='utf-8')
+        json.dump(watchlist_data, temp_file, ensure_ascii=False, indent=2)
+        temp_file.close()
+        
+        # Import from the temporary file
+        count = db_manager.import_watchlist_from_json(temp_file.name, merge=merge)
+        
+        # Clean up temporary file
+        Path(temp_file.name).unlink()
+        
+        logger.info(f"Imported {count} watchlist items")
+        return jsonify({
+            'success': True,
+            'message': f'已导入 {count} 个股票',
+            'count': count
+        })
+    except Exception as e:
+        logger.error(f"Import watchlist error: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/watchlist/backup', methods=['POST'])
+def backup_watchlist():
+    """
+    API endpoint to create an automatic backup of watchlist
+    """
+    try:
+        if db_manager is None:
+            return jsonify({'success': False, 'error': 'Database not initialized'}), 500
+        
+        filepath = db_manager.auto_backup_watchlist()
+        
+        logger.info(f"Created watchlist backup at {filepath}")
+        return jsonify({
+            'success': True,
+            'message': '备份已创建',
+            'filepath': filepath
+        })
+    except Exception as e:
+        logger.error(f"Backup watchlist error: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)

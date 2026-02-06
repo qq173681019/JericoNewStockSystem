@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 import sys
+import json
 from pathlib import Path
 
 # Add project root to Python path
@@ -280,3 +281,132 @@ class DatabaseManager:
             raise
         finally:
             session.close()
+    
+    def export_watchlist_to_json(self, filepath: str = None):
+        """
+        Export watchlist to JSON file for backup
+        
+        Args:
+            filepath: Path to save the JSON file. If None, uses data directory
+            
+        Returns:
+            str: Path to the exported file
+        """
+        if filepath is None:
+            from config.settings import DATA_DIR
+            filepath = DATA_DIR / "watchlist_backup.json"
+        else:
+            filepath = Path(filepath)
+        
+        session = self.get_session()
+        try:
+            items = session.query(Watchlist).all()
+            watchlist_data = []
+            
+            for item in items:
+                watchlist_data.append({
+                    'stock_code': item.stock_code,
+                    'stock_name': item.stock_name,
+                    'target_price': item.target_price,
+                    'target_days': item.target_days,
+                    'stop_loss_price': item.stop_loss_price,
+                    'stop_profit_price': item.stop_profit_price,
+                    'notes': item.notes,
+                    'created_at': item.created_at.isoformat() if item.created_at else None,
+                    'updated_at': item.updated_at.isoformat() if item.updated_at else None
+                })
+            
+            # Ensure directory exists
+            filepath.parent.mkdir(parents=True, exist_ok=True)
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(watchlist_data, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"Exported {len(watchlist_data)} watchlist items to {filepath}")
+            return str(filepath)
+        except Exception as e:
+            logger.error(f"Error exporting watchlist: {str(e)}")
+            raise
+        finally:
+            session.close()
+    
+    def import_watchlist_from_json(self, filepath: str, merge: bool = True):
+        """
+        Import watchlist from JSON file
+        
+        Args:
+            filepath: Path to the JSON file
+            merge: If True, merge with existing data. If False, replace existing data.
+            
+        Returns:
+            int: Number of items imported
+        """
+        filepath = Path(filepath)
+        if not filepath.exists():
+            raise FileNotFoundError(f"Backup file not found: {filepath}")
+        
+        session = self.get_session()
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                watchlist_data = json.load(f)
+            
+            # If not merging, clear existing watchlist
+            if not merge:
+                session.query(Watchlist).delete()
+                logger.info("Cleared existing watchlist for replacement")
+            
+            imported_count = 0
+            for item_data in watchlist_data:
+                # Check if item already exists (for merge mode)
+                existing_item = session.query(Watchlist).filter(
+                    Watchlist.stock_code == item_data['stock_code']
+                ).first()
+                
+                if existing_item:
+                    if merge:
+                        # Update existing item
+                        for key, value in item_data.items():
+                            if key not in ['created_at', 'updated_at'] and hasattr(existing_item, key):
+                                setattr(existing_item, key, value)
+                        logger.info(f"Updated existing watchlist item: {item_data['stock_code']}")
+                    else:
+                        continue  # Skip if replacing and item already exists (shouldn't happen)
+                else:
+                    # Create new item
+                    new_item = Watchlist(
+                        stock_code=item_data['stock_code'],
+                        stock_name=item_data.get('stock_name'),
+                        target_price=item_data.get('target_price'),
+                        target_days=item_data.get('target_days'),
+                        stop_loss_price=item_data.get('stop_loss_price'),
+                        stop_profit_price=item_data.get('stop_profit_price'),
+                        notes=item_data.get('notes')
+                    )
+                    session.add(new_item)
+                
+                imported_count += 1
+            
+            session.commit()
+            logger.info(f"Imported {imported_count} watchlist items from {filepath}")
+            return imported_count
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error importing watchlist: {str(e)}")
+            raise
+        finally:
+            session.close()
+    
+    def auto_backup_watchlist(self):
+        """
+        Automatically backup watchlist to a timestamped file
+        
+        Returns:
+            str: Path to the backup file
+        """
+        from config.settings import DATA_DIR
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_dir = DATA_DIR / "backups"
+        backup_dir.mkdir(parents=True, exist_ok=True)
+        
+        filepath = backup_dir / f"watchlist_backup_{timestamp}.json"
+        return self.export_watchlist_to_json(str(filepath))

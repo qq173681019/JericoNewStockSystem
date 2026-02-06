@@ -65,3 +65,7 @@ models/saved/
 *.pkl
 *.h5
 *.pth
+
+# But keep backup files
+!data/backups/
+!data/watchlist_backup.json

@@ -688,6 +688,117 @@ refreshWatchlistBtn.addEventListener('click', async () => {
     }
 });
 
+// Export watchlist button
+const exportWatchlistBtn = document.getElementById('exportWatchlistBtn');
+if (exportWatchlistBtn) {
+    exportWatchlistBtn.addEventListener('click', async () => {
+        try {
+            exportWatchlistBtn.disabled = true;
+            exportWatchlistBtn.innerHTML = '<span>⏳</span> 导出中...';
+            
+            const response = await fetch('/api/watchlist/export');
+            const result = await response.json();
+            
+            if (result.success) {
+                // Create a download link
+                const dataStr = JSON.stringify(result.data, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `watchlist_backup_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                exportWatchlistBtn.innerHTML = '<span>✅</span> 已导出';
+                setTimeout(() => {
+                    exportWatchlistBtn.innerHTML = '<span>📥</span> 导出';
+                    exportWatchlistBtn.disabled = false;
+                }, 1500);
+            } else {
+                throw new Error(result.error || '导出失败');
+            }
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('导出失败: ' + error.message);
+            exportWatchlistBtn.innerHTML = '<span>❌</span> 导出失败';
+            setTimeout(() => {
+                exportWatchlistBtn.innerHTML = '<span>📥</span> 导出';
+                exportWatchlistBtn.disabled = false;
+            }, 1500);
+        }
+    });
+}
+
+// Import watchlist button
+const importWatchlistBtn = document.getElementById('importWatchlistBtn');
+const importFileInput = document.getElementById('importFileInput');
+
+if (importWatchlistBtn && importFileInput) {
+    importWatchlistBtn.addEventListener('click', () => {
+        importFileInput.click();
+    });
+    
+    importFileInput.addEventListener('change', async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        try {
+            importWatchlistBtn.disabled = true;
+            importWatchlistBtn.innerHTML = '<span>⏳</span> 导入中...';
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // Ask user if they want to merge or replace
+                    const merge = confirm('是否合并导入？\n点击"确定"合并现有数据\n点击"取消"替换现有数据');
+                    
+                    const response = await fetch('/api/watchlist/import', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({data, merge})
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert(result.message);
+                        await loadWatchlist();
+                        importWatchlistBtn.innerHTML = '<span>✅</span> 已导入';
+                    } else {
+                        throw new Error(result.error || '导入失败');
+                    }
+                } catch (error) {
+                    console.error('Import error:', error);
+                    alert('导入失败: ' + error.message);
+                    importWatchlistBtn.innerHTML = '<span>❌</span> 导入失败';
+                } finally {
+                    setTimeout(() => {
+                        importWatchlistBtn.innerHTML = '<span>📤</span> 导入';
+                        importWatchlistBtn.disabled = false;
+                    }, 1500);
+                }
+            };
+            
+            reader.readAsText(file);
+            // Reset file input
+            importFileInput.value = '';
+        } catch (error) {
+            console.error('File read error:', error);
+            alert('读取文件失败: ' + error.message);
+            importWatchlistBtn.innerHTML = '<span>❌</span> 导入失败';
+            setTimeout(() => {
+                importWatchlistBtn.innerHTML = '<span>📤</span> 导入';
+                importWatchlistBtn.disabled = false;
+            }, 1500);
+        }
+    });
+}
+
 // Add to watchlist from prediction page
 const addToWatchlistFromPredictionBtn = document.getElementById('addToWatchlistFromPrediction');
 if (addToWatchlistFromPredictionBtn) {
