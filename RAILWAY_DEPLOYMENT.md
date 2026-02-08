@@ -2,18 +2,25 @@
 
 ## 🎯 部署问题已修复！
 
-本项目最近修复了 Railway 部署超时和失败的问题：
+本项目最近修复了 Railway 部署的 Nix 错误和其他问题：
 
-### 🔧 修复内容
+### 🔧 最新修复 (2026-02)
+1. **迁移到 Docker**: 从不稳定的 Nixpacks 迁移到可靠的 Docker 构建
+2. **添加 Dockerfile**: 明确的构建步骤，更好的控制
+3. **更新 railway.json**: 使用 DOCKERFILE 构建器
+4. **添加 .dockerignore**: 优化 Docker 构建大小和速度
+
+### 🔧 之前的修复
 1. **优化依赖**: 移除了 matplotlib 等耗时的包（构建时间减少 60%+）
-2. **添加 nixpacks.toml**: 优化 Railway 构建配置
-3. **添加 railway.json**: 配置重启策略
-4. **添加 .railwayignore**: 减少上传文件大小
-5. **使用 --no-cache-dir**: 减少构建时内存使用
+2. **添加 railway.json**: 配置重启策略
+3. **添加 .railwayignore**: 减少上传文件大小
+4. **使用 --no-cache-dir**: 减少构建时内存使用
 
 ### ⏱️ 预计部署时间
 - 首次部署：约 3-5 分钟
-- 后续部署：约 2-3 分钟（有缓存）
+- 后续部署：约 2-3 分钟（有 Docker 层缓存）
+
+> **重要提示**: 如果您遇到 Nixpacks 错误（nix-env 失败），请查看 [RAILWAY_NIX_ERROR_FIX.md](RAILWAY_NIX_ERROR_FIX.md) 了解详情。现在项目使用 Docker 构建，更加稳定可靠。
 
 ---
 
@@ -51,12 +58,14 @@
 
 本项目包含以下 Railway 配置文件（已预配置）：
 
-- **`nixpacks.toml`** - Nixpacks 构建配置，优化构建过程
-- **`railway.json`** - Railway 平台配置
-- **`Procfile`** - 启动命令配置（已存在）
-- **`runtime.txt`** - Python 版本指定 (3.11.7)（已存在）
+- **`Dockerfile`** - Docker 构建配置（推荐使用，更稳定）
+- **`.dockerignore`** - Docker 构建时忽略的文件
+- **`railway.json`** - Railway 平台配置（使用 Docker 构建器）
+- **`Procfile`** - 备用启动命令配置
+- **`runtime.txt`** - Python 版本指定 (3.11.7)
 - **`requirements-prod.txt`** - 生产环境依赖（已优化）
 - **`.railwayignore`** - 忽略不需要部署的文件
+- ~~**`nixpacks.toml`**~~ - 已删除（导致 Nix 错误的原因）
 
 ### ⚙️ 环境变量（可选）
 
@@ -72,6 +81,12 @@ FLASK_ENV=production
 
 ### 🔧 常见问题
 
+#### Q: 出现 Nix 错误怎么办？
+**A**: 项目已从 Nixpacks 迁移到 Docker 构建，这个问题已解决：
+1. 确保拉取最新代码（包含 Dockerfile）
+2. Railway 会自动检测并使用 Docker 构建
+3. 如果还有问题，查看 [RAILWAY_NIX_ERROR_FIX.md](RAILWAY_NIX_ERROR_FIX.md)
+
 #### Q: 部署超时怎么办？
 **A**: 本项目已经优化了依赖安装，移除了 matplotlib 等耗时的包。如果仍然超时：
 1. 检查 Railway 服务状态
@@ -80,10 +95,10 @@ FLASK_ENV=production
 4. 确保使用的是 `requirements-prod.txt` 而不是 `requirements.txt`
 
 **已知修复**：
+- ✅ 迁移到 Docker 构建（更稳定可靠）
 - ✅ 移除了 matplotlib（构建时间减少 60%+）
-- ✅ 添加了 nixpacks.toml 优化构建配置
 - ✅ 使用 --no-cache-dir 减少内存使用
-- ✅ 添加了 .railwayignore 减少上传文件
+- ✅ 添加了 .dockerignore 优化构建
 
 #### Q: 如何查看部署日志？
 **A**: 

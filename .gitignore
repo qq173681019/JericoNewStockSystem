@@ -69,3 +69,4 @@ models/saved/
 # But keep backup files
 !data/backups/
 !data/watchlist_backup.json
+nixpacks.toml.backup
