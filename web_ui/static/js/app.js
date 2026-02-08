@@ -404,7 +404,7 @@ async function runPrediction() {
 
 // Load multi-timeframe predictions
 async function loadMultiTimeframePredictions(stockCode) {
-    const timeframes = ['1hour', '3day', '30day'];
+    const timeframes = ['30min', '1day'];
     
     for (const timeframe of timeframes) {
         // Set loading state

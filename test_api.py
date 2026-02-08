@@ -41,13 +41,13 @@ print("="*60)
 
 predictor = MultiModelPredictor()
 
-for timeframe in ['1hour', '3day', '30day']:
+for timeframe in ['30min', '1day']:
     print(f"\n{'='*60}")
     print(f"⏱️  {timeframe.upper()} 预测测试")
     print(f"{'='*60}")
     
     # Expected number of predictions for each timeframe
-    expected_points = {'1hour': 12, '3day': 3, '30day': 90}
+    expected_points = {'30min': 6, '1day': 1}
     
     try:
         result = predictor.predict_multi_timeframe(data, timeframe=timeframe)
@@ -116,7 +116,6 @@ print("\n" + "="*60)
 print("✅ 所有测试完成")
 print("="*60)
 print("\n📋 总结:")
-print("   - 1小时预测: 短期波动预测，适合日内交易")
-print("   - 3天预测: 短期趋势预测，适合波段交易")
-print("   - 30天预测: 中期目标预测，适合趋势投资")
+print("   - 30分钟预测: 超短期波动预测，适合日内交易")
+print("   - 1天预测: 短期趋势预测，适合波段交易")
 print("\n⚠️  注意: 预测仅供参考，投资有风险，决策需谨慎！")

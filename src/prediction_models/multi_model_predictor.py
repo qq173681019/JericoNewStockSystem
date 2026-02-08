@@ -45,18 +45,15 @@ class MultiModelPredictor:
         返回: dict, 包含各模型预测结果和集成结果
         """
         # 根据时间框架确定预测点数
-        if timeframe == '1hour':
-            pred_points = 12  # 1小时内，假设5分钟一个点
+        if timeframe == '30min':
+            pred_points = 6   # 30分钟，假设5分钟一个点
             window_size = 60  # 使用5小时历史数据
-        elif timeframe == '3day':
-            pred_points = 3   # 3天
+        elif timeframe == '1day':
+            pred_points = 1   # 1天
             window_size = 10  # 使用10天历史数据
-        elif timeframe == '30day':
-            pred_points = 90  # 90天（约3个月）
-            window_size = 30  # 使用30天历史数据
         else:
-            # 默认3天预测
-            pred_points = 3
+            # 默认1天预测
+            pred_points = 1
             window_size = 10
             
         results = {}

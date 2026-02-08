@@ -94,14 +94,6 @@
                                     开始预测
                                 </button>
                             </div>
-                            <div class="timeframe-selector">
-                                <label>预测时间框架:</label>
-                                <div class="timeframe-buttons">
-                                    <button class="btn btn-timeframe" data-timeframe="1hour">1小时</button>
-                                    <button class="btn btn-timeframe active" data-timeframe="3day">3天</button>
-                                    <button class="btn btn-timeframe" data-timeframe="30day">90天</button>
-                                </div>
-                            </div>
                         </div>
                         
                         <div class="prediction-results" id="predictionResults" style="display: none;">
@@ -118,65 +110,44 @@
                             
                             <!-- Multi-timeframe prediction cards -->
                             <div class="multi-timeframe-results" id="multiTimeframeResults">
-                                <div class="timeframe-card" data-timeframe="1hour">
+                                <div class="timeframe-card" data-timeframe="30min">
                                     <div class="timeframe-header">
-                                        <h3>⏱️ 1小时预测</h3>
-                                        <span class="timeframe-status" id="status1hour">--</span>
+                                        <h3>⏱️ 30分钟预测</h3>
+                                        <span class="timeframe-status" id="status30min">--</span>
                                     </div>
                                     <div class="timeframe-content">
                                         <div class="prediction-value">
                                             <span class="value-label">预测价格</span>
-                                            <span class="value-number" id="price1hour">--</span>
+                                            <span class="value-number" id="price30min">--</span>
                                         </div>
                                         <div class="prediction-change">
                                             <span class="change-label">预期变化</span>
-                                            <span class="change-number" id="change1hour">--</span>
+                                            <span class="change-number" id="change30min">--</span>
                                         </div>
                                         <div class="prediction-confidence">
                                             <span class="confidence-label">信心度</span>
-                                            <span class="confidence-number" id="confidence1hour">--</span>
+                                            <span class="confidence-number" id="confidence30min">--</span>
                                         </div>
                                     </div>
                                 </div>
                                 
-                                <div class="timeframe-card" data-timeframe="3day">
+                                <div class="timeframe-card" data-timeframe="1day">
                                     <div class="timeframe-header">
-                                        <h3>📅 3天预测</h3>
-                                        <span class="timeframe-status" id="status3day">--</span>
+                                        <h3>📅 1天预测</h3>
+                                        <span class="timeframe-status" id="status1day">--</span>
                                     </div>
                                     <div class="timeframe-content">
                                         <div class="prediction-value">
                                             <span class="value-label">预测价格</span>
-                                            <span class="value-number" id="price3day">--</span>
+                                            <span class="value-number" id="price1day">--</span>
                                         </div>
                                         <div class="prediction-change">
                                             <span class="change-label">预期变化</span>
-                                            <span class="change-number" id="change3day">--</span>
+                                            <span class="change-number" id="change1day">--</span>
                                         </div>
                                         <div class="prediction-confidence">
                                             <span class="confidence-label">信心度</span>
-                                            <span class="confidence-number" id="confidence3day">--</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="timeframe-card" data-timeframe="30day">
-                                    <div class="timeframe-header">
-                                        <h3>📈 90天预测</h3>
-                                        <span class="timeframe-status" id="status30day">--</span>
-                                    </div>
-                                    <div class="timeframe-content">
-                                        <div class="prediction-value">
-                                            <span class="value-label">预测价格</span>
-                                            <span class="value-number" id="price30day">--</span>
-                                        </div>
-                                        <div class="prediction-change">
-                                            <span class="change-label">预期变化</span>
-                                            <span class="change-number" id="change30day">--</span>
-                                        </div>
-                                        <div class="prediction-confidence">
-                                            <span class="confidence-label">信心度</span>
-                                            <span class="confidence-number" id="confidence30day">--</span>
+                                            <span class="confidence-number" id="confidence1day">--</span>
                                         </div>
                                     </div>
                                 </div>

@@ -296,10 +296,10 @@ def predict_stock_multi_timeframe(stock_code):
         logger.info(f"Multi-timeframe prediction requested for stock: {stock_code}, timeframe: {timeframe}")
         
         # Validate timeframe
-        if timeframe not in ['1hour', '3day', '30day']:
+        if timeframe not in ['30min', '1day']:
             return jsonify({
                 'success': False,
-                'error': 'Invalid timeframe. Must be 1hour, 3day, or 30day',
+                'error': 'Invalid timeframe. Must be 30min or 1day',
                 'message': 'Invalid timeframe parameter'
             }), 400
         
@@ -316,7 +316,7 @@ def predict_stock_multi_timeframe(stock_code):
         
         # Fetch historical data for prediction
         historical_df = None
-        days_to_fetch = 60 if timeframe == '30day' else 30
+        days_to_fetch = 30  # Use 30 days for both timeframes
         
         if data_fetcher:
             try:
@@ -382,15 +382,12 @@ def predict_stock_multi_timeframe(stock_code):
                 current_price = 10 + (hash(stock_code) % 50)
             
             # Generate simple fallback prediction with minimal change
-            if timeframe == '1hour':
-                pred_points = 12
-                timeframe_label = '1小时'
-            elif timeframe == '3day':
-                pred_points = 3
-                timeframe_label = '3天'
-            else:  # 30day
-                pred_points = 90
-                timeframe_label = '90天'  # 明确标注为90天，而非3个月
+            if timeframe == '30min':
+                pred_points = 6
+                timeframe_label = '30分钟'
+            else:  # 1day
+                pred_points = 1
+                timeframe_label = '1天'
             
             # Simple linear prediction with small increments
             # IMPORTANT: This is DEMO data only - real predictions use multi-model ensemble
@@ -417,12 +414,10 @@ def predict_stock_multi_timeframe(stock_code):
                 direction = 'neutral'
             
             # Get timeframe label
-            if timeframe == '1hour':
-                timeframe_label = '1小时'
-            elif timeframe == '3day':
-                timeframe_label = '3天'
+            if timeframe == '30min':
+                timeframe_label = '30分钟'
             else:
-                timeframe_label = '90天'  # 明确标注为90天
+                timeframe_label = '1天'
         
         # Prepare result
         is_fallback = prediction_result is None or 'error' in prediction_result
