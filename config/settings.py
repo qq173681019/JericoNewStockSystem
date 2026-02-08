@@ -19,8 +19,9 @@ SRC_DIR = ROOT_DIR / "src"
 
 # Use /tmp for data in cloud environments (Railway, Vercel, etc.)
 # These platforms have read-only file systems except for /tmp
-# Railway provides RAILWAY_PUBLIC_DOMAIN, not RAILWAY_ENVIRONMENT
+# Railway provides RAILWAY_ENVIRONMENT and RAILWAY_PUBLIC_DOMAIN
 IS_CLOUD_ENV = (
+    os.getenv("RAILWAY_ENVIRONMENT") is not None or
     os.getenv("RAILWAY_PUBLIC_DOMAIN") is not None or 
     os.getenv("VERCEL") is not None or 
     os.getenv("RENDER") is not None
