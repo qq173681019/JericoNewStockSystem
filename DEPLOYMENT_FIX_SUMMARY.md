@@ -16,7 +16,7 @@ Sandbox exited with unexpected code: {"code":1,"signal":null}
 ```python
 # 检测云环境
 IS_CLOUD_ENV = (
-    os.getenv("RAILWAY_ENVIRONMENT") is not None or 
+    os.getenv("RAILWAY_PUBLIC_DOMAIN") is not None or 
     os.getenv("VERCEL") is not None or 
     os.getenv("RENDER") is not None
 )
@@ -98,7 +98,7 @@ python3 -c "from config.settings import DATA_DIR; print(DATA_DIR)"
 # 输出: /home/runner/work/JericoNewStockSystem/data
 
 # ✅ 云环境测试（模拟 Railway）
-RAILWAY_ENVIRONMENT=production python3 -c "from config.settings import DATA_DIR; print(DATA_DIR)"
+RAILWAY_PUBLIC_DOMAIN=test.railway.app python3 -c "from config.settings import DATA_DIR; print(DATA_DIR)"
 # 输出: /tmp/data
 
 # ✅ Gunicorn 启动测试

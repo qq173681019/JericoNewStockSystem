@@ -7,7 +7,7 @@ echo ""
 
 # 测试 1: 检查必需文件
 echo "✓ 测试 1: 检查配置文件..."
-files=("app.py" "vercel.json" "railway.json" "nixpacks.toml" "Procfile" "requirements-prod.txt")
+files=("app.py" "vercel.json" "railway.json" "Procfile" "requirements-prod.txt" "Dockerfile")
 for file in "${files[@]}"; do
     if [ -f "$file" ]; then
         echo "  ✅ $file 存在"
@@ -34,7 +34,7 @@ echo ""
 
 # 测试 3: 测试云环境
 echo "✓ 测试 3: 云环境路径..."
-result=$(RAILWAY_ENVIRONMENT=production python3 -c "from config.settings import DATA_DIR, IS_CLOUD_ENV; print(f'{IS_CLOUD_ENV}|{DATA_DIR}')" 2>&1)
+result=$(RAILWAY_PUBLIC_DOMAIN=test.railway.app python3 -c "from config.settings import DATA_DIR, IS_CLOUD_ENV; print(f'{IS_CLOUD_ENV}|{DATA_DIR}')" 2>&1)
 is_cloud=$(echo $result | cut -d'|' -f1)
 data_dir=$(echo $result | cut -d'|' -f2)
 if [ "$is_cloud" = "True" ] && [ "$data_dir" = "/tmp/data" ]; then

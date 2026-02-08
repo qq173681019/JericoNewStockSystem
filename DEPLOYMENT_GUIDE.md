@@ -173,7 +173,7 @@ Vercel will automatically detect project configuration:
 The following variables don't need to be configured in Railway as they are set automatically:
 
 - `PORT` - 自动由 Railway 设置 / Automatically set by Railway
-- `RAILWAY_ENVIRONMENT` - 自动设置为 "production" / Automatically set to "production"
+- `RAILWAY_PUBLIC_DOMAIN` - Railway 自动设置的公共域名，用于检测云环境 / Automatically set by Railway for cloud environment detection
 
 ### 可选环境变量 / Optional Environment Variables
 
