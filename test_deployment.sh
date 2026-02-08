@@ -32,13 +32,27 @@ else
 fi
 echo ""
 
-# 测试 3: 测试云环境
-echo "✓ 测试 3: 云环境路径..."
+# 测试 3: 测试云环境 (RAILWAY_PUBLIC_DOMAIN)
+echo "✓ 测试 3: 云环境路径 (RAILWAY_PUBLIC_DOMAIN)..."
 result=$(RAILWAY_PUBLIC_DOMAIN=test.railway.app python3 -c "from config.settings import DATA_DIR, IS_CLOUD_ENV; print(f'{IS_CLOUD_ENV}|{DATA_DIR}')" 2>&1)
 is_cloud=$(echo $result | cut -d'|' -f1)
 data_dir=$(echo $result | cut -d'|' -f2)
 if [ "$is_cloud" = "True" ] && [ "$data_dir" = "/tmp/data" ]; then
     echo "  ✅ 云环境检测正确: IS_CLOUD_ENV=True"
+    echo "  ✅ 数据目录: $data_dir"
+else
+    echo "  ❌ 云环境检测失败"
+    exit 1
+fi
+echo ""
+
+# 测试 3b: 测试云环境 (RAILWAY_ENVIRONMENT)
+echo "✓ 测试 3b: 云环境路径 (RAILWAY_ENVIRONMENT)..."
+result=$(RAILWAY_ENVIRONMENT=production python3 -c "from config.settings import DATA_DIR, IS_CLOUD_ENV; print(f'{IS_CLOUD_ENV}|{DATA_DIR}')" 2>&1)
+is_cloud=$(echo $result | cut -d'|' -f1)
+data_dir=$(echo $result | cut -d'|' -f2)
+if [ "$is_cloud" = "True" ] && [ "$data_dir" = "/tmp/data" ]; then
+    echo "  ✅ 云环境检测正确: IS_CLOUD_ENV=True (使用RAILWAY_ENVIRONMENT)"
     echo "  ✅ 数据目录: $data_dir"
 else
     echo "  ❌ 云环境检测失败"
