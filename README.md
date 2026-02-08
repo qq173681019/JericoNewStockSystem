@@ -3,7 +3,6 @@
 [![Python](https://img.shields.io/badge/Python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Deploy with Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com/new/clone?repository-url=https://github.com/qq173681019/JericoNewStockSystem)
-[![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-purple?logo=railway)](https://railway.app/new/template)
 
 **Stock Intelligent Analysis & Prediction System (SIAPS)** - 一个基于机器学习和深度学习的股票分析预测系统。
 
@@ -15,23 +14,21 @@
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/qq173681019/JericoNewStockSystem)
 
-📖 **完整部署指南**: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) - 详细的 Railway 和 Vercel 部署教程
+📖 **完整部署指南**: [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) - 详细的 Vercel 部署教程
 
 ### ✨ 部署特性
 
 - ✅ **已优化配置** - 开箱即用的部署配置
 - ✅ **自动构建** - 推送代码自动部署
-- ✅ **生产就绪** - 使用 Gunicorn WSGI 服务器
-- ✅ **云环境优化** - 自动适配云平台文件系统
+- ✅ **云环境优化** - 自动适配 Vercel 无服务器环境
 - ✅ **快速启动** - 5分钟内完成部署
+- ✅ **全球CDN加速** - Vercel 提供全球访问加速
 
 ### 🔧 主要改进
 
 本版本已解决之前的部署问题：
-- ✅ **修复了 Railway Nix 错误** - 从 Nixpacks 迁移到 Docker 构建 ([详情](RAILWAY_NIX_ERROR_FIX.md))
 - ✅ 修复了云环境数据库路径问题（使用 `/tmp` 目录）
-- ✅ 优化了 Vercel 和 Railway 配置文件
-- ✅ 使用 Gunicorn 替代 Flask 开发服务器
+- ✅ 优化了 Vercel 配置文件
 - ✅ 精简了依赖包，加快构建速度
 - ✅ **修复了 Vercel 缓冲区溢出错误** - 分离开发和生产依赖 ([详情](VERCEL_FIX.md))
 
@@ -76,17 +73,9 @@ python run_web_ui.py --mobile
 
 想要在任何地方通过手机访问？请查看云端部署指南：
 
-📖 **Vercel 快速部署**: [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) ⭐ **推荐新手** - 全球CDN加速
-
-📖 **Railway 快速部署**: [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) ⭐ **长期运行推荐**
+📖 **Vercel 快速部署**: [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) ⭐ **推荐** - 全球CDN加速，完全免费
 
 📖 **云端部署完整教程**: [云端部署指南.md](docs/云端部署指南.md)
-
-支持的云平台：
-- **Vercel** - 完全免费，全球CDN，最快速度（推荐）✨ 已配置好，一键部署
-- **Railway** - 完全免费，适合长期运行（推荐）✨ 已配置好，一键部署
-- **Render** - 免费层，易用
-- **腾讯云/阿里云** - 国内访问快，约24元/月
 
 ### 🖥️ 启动桌面版（传统界面）
 

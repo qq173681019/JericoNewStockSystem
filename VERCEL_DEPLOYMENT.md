@@ -146,22 +146,11 @@ Vercel 会自动设置以下环境变量：
 
 ## 🔧 常见问题 / FAQ
 
-### Q: Vercel 和 Railway 有什么区别？
-
-**A**: 两个平台都支持部署，但有不同特点：
-
-| 特性 | Vercel | Railway |
-|-----|--------|---------|
-| 部署速度 | 快 (1-2分钟) | 中等 (3-5分钟) |
-| 免费额度 | 100 GB流量/月 | 500小时/月 |
-| 适用场景 | 轻量级应用 | 长期运行服务 |
-| 全球CDN | ✅ | ❌ |
-
 ### Q: 部署后无法访问怎么办？
 
 **A**: 检查以下几点：
 1. 查看 Vercel 部署日志是否有错误
-2. 确认所有依赖都在 `requirements-prod.txt` 中
+2. 确认所有依赖都在 `requirements.txt` 中
 3. 检查 Vercel 函数日志（在项目 → Functions 查看）
 
 ### Q: 如何更新部署的应用？
@@ -183,13 +172,15 @@ git push
 
 ### Q: 部署到 Vercel 是免费的吗？
 
+### Q: Vercel 免费吗？/ Is Vercel free?
+
 **A**: 是的！Vercel 提供免费计划：
 - 无限部署
 - 100 GB 带宽/月
 - 自动 HTTPS
 - 全球 CDN
 
-但有函数执行时间限制（10秒）。如果需要更长时间，考虑升级或使用 Railway。
+但有函数执行时间限制（10秒）。如果需要更长时间，考虑升级到 Pro 计划。
 
 ### Q: 数据会持久化吗？
 
@@ -198,7 +189,7 @@ git push
 - 如需持久化数据，考虑：
   - 使用外部数据库（PostgreSQL、MySQL）
   - 使用云存储服务
-  - 或改用 Railway 部署
+  - 使用 Vercel KV 或其他持久化存储解决方案
 
 ---
 
@@ -218,9 +209,9 @@ git push
 
 ## 📚 更多资源 / More Resources
 
-- [Railway 部署指南](RAILWAY_DEPLOYMENT.md) - 另一个部署选择
 - [Vercel 官方文档](https://vercel.com/docs)
 - [Flask on Vercel](https://vercel.com/docs/frameworks/backend/flask)
+- [Vercel 缓冲区溢出修复说明](VERCEL_FIX.md)
 
 ---
 

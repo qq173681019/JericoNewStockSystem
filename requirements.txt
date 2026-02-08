@@ -1,6 +1,6 @@
-# Production dependencies for cloud deployment (Railway/Render optimized)
+# Production dependencies for Vercel deployment
 # Lightweight version without heavy ML libraries
-# Optimized to avoid build timeouts
+# Optimized for serverless deployment
 
 # Core
 python-dotenv>=1.0.0
@@ -8,7 +8,6 @@ python-dotenv>=1.0.0
 # Web Framework
 Flask>=3.0.0
 Flask-CORS>=4.0.0
-gunicorn>=21.2.0
 
 # Data handling - using binary wheels for faster installation
 pandas>=2.0.0
