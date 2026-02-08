@@ -65,7 +65,7 @@
 - **`runtime.txt`** - Python 版本指定 (3.11.7)
 - **`requirements-prod.txt`** - 生产环境依赖（已优化）
 - **`.railwayignore`** - 忽略不需要部署的文件
-- **`nixpacks.toml`** - 旧的 Nixpacks 配置（已弃用，保留用于参考）
+- ~~**`nixpacks.toml`**~~ - 已删除（导致 Nix 错误的原因）
 
 ### ⚙️ 环境变量（可选）
 

@@ -36,7 +36,13 @@ Changed from Nixpacks to Dockerfile builder:
 }
 ```
 
-#### 3. Created `.dockerignore`
+#### 3. Removed `nixpacks.toml`
+**Critical**: The `nixpacks.toml` file has been removed from the repository because:
+- Railway may prioritize Nixpacks if this file exists, even with railway.json configured for Docker
+- This was causing Railway to ignore the Dockerfile and still try to use deprecated Nixpacks
+- Without this file, Railway will reliably use the Dockerfile as specified in railway.json
+
+#### 4. Created `.dockerignore`
 Optimizes the Docker build by excluding:
 - Development files and tests
 - Documentation
