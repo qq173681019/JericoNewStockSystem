@@ -38,4 +38,5 @@ EXPOSE 8080
 # Start command using gunicorn
 # Railway will provide the PORT environment variable at runtime
 # Using shell form to enable environment variable expansion
-CMD sh -c "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile - --log-level info app:app"
+# Use single worker with preload for faster startup and better visibility of errors
+CMD sh -c "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --worker-class sync --timeout 120 --graceful-timeout 30 --preload --access-logfile - --error-logfile - --log-level info app:app"
