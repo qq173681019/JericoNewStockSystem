@@ -14,7 +14,7 @@ except ImportError:
     print("To install: pip install python-dotenv")
 
 # Project root directory
-ROOT_DIR = Path(__file__).parent.parent.parent
+ROOT_DIR = Path(__file__).parent.parent
 SRC_DIR = ROOT_DIR / "src"
 
 # Use /tmp for data in cloud environments (Railway, Vercel, etc.)
