@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIAPS - 股票智能分析预测系统</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <span>📈</span>
+                <span>SIAPS</span>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <span>☰</span>
+            </button>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item active" data-view="prediction">
+                <span>📊</span>
+                <span>股票预测</span>
+            </li>
+            <li class="nav-item" data-view="watchlist">
+                <span>👁️</span>
+                <span>观测池</span>
+            </li>
+            <li class="nav-item" data-view="history">
+                <span>🕐</span>
+                <span>历史记录</span>
+            </li>
+            <li class="nav-item" data-view="analytics">
+                <span>📈</span>
+                <span>数据分析</span>
+            </li>
+            <li class="nav-item" data-view="settings">
+                <span>⚙️</span>
+                <span>设置</span>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <div class="theme-toggle">
+                <span>🌙</span>
+                <label class="switch">
+                    <input type="checkbox" id="themeToggle">
+                    <span class="slider"></span>
+                </label>
+                <span>☀️</span>
+            </div>
+            <div class="version-info">v1.0.0</div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <span>☰</span>
+                </button>
+                <h1 class="page-title" id="pageTitle">股票预测</h1>
+            </div>
+            <div class="header-right">
+                <div class="search-bar">
+                    <span>🔍</span>
+                    <input type="text" placeholder="搜索股票代码..." id="quickSearch">
+                </div>
+                <div class="user-menu">
+                    <span>👤</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- View Container -->
+        <div class="view-container" id="viewContainer">
+            <!-- Prediction View -->
+            <div class="view active" id="predictionView">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>股票分析预测</h2>
+                        <p class="card-subtitle">输入股票代码获取智能分析和预测</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="stock-input-section">
+                            <div class="input-group">
+                                <input type="text" id="stockCode" placeholder="输入股票代码，例如: 000001" class="stock-input">
+                                <button class="btn btn-primary" id="predictBtn">
+                                    <span>✨</span>
+                                    开始预测
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="prediction-results" id="predictionResults" style="display: none;">
+                            <div class="stock-info-header">
+                                <div class="stock-code-name">
+                                    <span class="stock-code" id="resultStockCode">--</span>
+                                    <span class="stock-name" id="resultStockName">--</span>
+                                    <span class="current-price" id="resultCurrentPrice">--</span>
+                                    <button class="btn btn-add-watchlist" id="addToWatchlistFromPrediction" title="添加到观测池">
+                                        <span>➕</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Multi-timeframe prediction cards -->
+                            <div class="multi-timeframe-results" id="multiTimeframeResults">
+                                <div class="timeframe-card" data-timeframe="30min">
+                                    <div class="timeframe-header">
+                                        <h3>⏱️ 30分钟预测</h3>
+                                        <span class="timeframe-status" id="status30min">--</span>
+                                    </div>
+                                    <div class="timeframe-content">
+                                        <div class="prediction-value">
+                                            <span class="value-label">预测价格</span>
+                                            <span class="value-number" id="price30min">--</span>
+                                        </div>
+                                        <div class="prediction-change">
+                                            <span class="change-label">预期变化</span>
+                                            <span class="change-number" id="change30min">--</span>
+                                        </div>
+                                        <div class="prediction-confidence">
+                                            <span class="confidence-label">信心度</span>
+                                            <span class="confidence-number" id="confidence30min">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="timeframe-card" data-timeframe="1day">
+                                    <div class="timeframe-header">
+                                        <h3>📅 1天预测</h3>
+                                        <span class="timeframe-status" id="status1day">--</span>
+                                    </div>
+                                    <div class="timeframe-content">
+                                        <div class="prediction-value">
+                                            <span class="value-label">预测价格</span>
+                                            <span class="value-number" id="price1day">--</span>
+                                        </div>
+                                        <div class="prediction-change">
+                                            <span class="change-label">预期变化</span>
+                                            <span class="change-number" id="change1day">--</span>
+                                        </div>
+                                        <div class="prediction-confidence">
+                                            <span class="confidence-label">信心度</span>
+                                            <span class="confidence-number" id="confidence1day">--</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="results-grid">
+                                <div class="result-card">
+                                    <div class="result-icon">
+                                        <span>📈</span>
+                                    </div>
+                                    <div class="result-content">
+                                        <h3>短期预测</h3>
+                                        <p class="result-value" id="shortTermPrediction">--</p>
+                                        <p class="result-label">预测涨跌</p>
+                                    </div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-icon">
+                                        <span>📅</span>
+                                    </div>
+                                    <div class="result-content">
+                                        <h3>中期预测</h3>
+                                        <p class="result-value" id="mediumTermPrediction">--</p>
+                                        <p class="result-label">3个月目标价</p>
+                                    </div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-icon">
+                                        <span>💡</span>
+                                    </div>
+                                    <div class="result-content">
+                                        <h3>操作建议</h3>
+                                        <p class="result-value" id="tradingAdvice">--</p>
+                                        <p class="result-label">交易建议</p>
+                                    </div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-icon">
+                                        <span>🎯</span>
+                                    </div>
+                                    <div class="result-content">
+                                        <h3>准确率</h3>
+                                        <p class="result-value" id="accuracy">--</p>
+                                        <p class="result-label">模型准确率</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="chart-container">
+                                <h3>价格走势图</h3>
+                                <canvas id="priceChart"></canvas>
+                            </div>
+                            
+                            <div class="technical-indicators">
+                                <h3>技术指标</h3>
+                                <div class="indicators-grid">
+                                    <div class="indicator">
+                                        <span class="indicator-name">RSI</span>
+                                        <span class="indicator-value" id="rsi">--</span>
+                                    </div>
+                                    <div class="indicator">
+                                        <span class="indicator-name">MACD</span>
+                                        <span class="indicator-value" id="macd">--</span>
+                                    </div>
+                                    <div class="indicator">
+                                        <span class="indicator-name">KDJ</span>
+                                        <span class="indicator-value" id="kdj">--</span>
+                                    </div>
+                                    <div class="indicator">
+                                        <span class="indicator-name">MA5</span>
+                                        <span class="indicator-value" id="ma5">--</span>
+                                    </div>
+                                    <div class="indicator">
+                                        <span class="indicator-name">MA20</span>
+                                        <span class="indicator-value" id="ma20">--</span>
+                                    </div>
+                                    <div class="indicator">
+                                        <span class="indicator-name">BOLL</span>
+                                        <span class="indicator-value" id="boll">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Watchlist View -->
+            <div class="view" id="watchlistView">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>观测池管理</h2>
+                        <div class="header-buttons">
+                            <button class="btn btn-secondary" id="exportWatchlistBtn" title="导出备份">
+                                <span>📥</span>
+                                导出
+                            </button>
+                            <button class="btn btn-secondary" id="importWatchlistBtn" title="导入备份">
+                                <span>📤</span>
+                                导入
+                            </button>
+                            <button class="btn btn-secondary" id="refreshWatchlistBtn">
+                                <span>🔄</span>
+                                刷新数据
+                            </button>
+                            <button class="btn btn-primary" id="addStockBtn">
+                                <span>➕</span>
+                                添加股票
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="watchlist-table">
+                            <table id="watchlistTable">
+                                <thead>
+                                    <tr>
+                                        <th>股票代码</th>
+                                        <th>股票名称</th>
+                                        <th>当前价格</th>
+                                        <th>涨跌幅</th>
+                                        <th>状态</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="watchlistBody">
+                                    <!-- Data loaded dynamically -->
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: var(--text-secondary);">
+                                            加载中...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hidden file input for import -->
+            <input type="file" id="importFileInput" accept=".json" style="display: none;" />
+
+            <!-- History View -->
+            <div class="view" id="historyView">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>预测历史记录</h2>
+                        <div class="filter-controls">
+                            <select class="filter-select">
+                                <option>全部记录</option>
+                                <option>今天</option>
+                                <option>本周</option>
+                                <option>本月</option>
+                            </select>
+                            <button class="btn btn-danger" id="clearHistoryBtn">
+                                <span>🗑️</span>
+                                清空历史记录
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="history-stats">
+                            <div class="stat-card">
+                                <span>📊</span>
+                                <div>
+                                    <h3>156</h3>
+                                    <p>总预测次数</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <span>✅</span>
+                                <div>
+                                    <h3>78.5%</h3>
+                                    <p>准确率</p>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <span>🏆</span>
+                                <div>
+                                    <h3>45</h3>
+                                    <p>盈利次数</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="history-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>股票代码</th>
+                                        <th>预测类型</th>
+                                        <th>预测结果</th>
+                                        <th>实际结果</th>
+                                        <th>准确性</th>
+                                        <th>操作</th>
+                                        <th>观测池</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>2026-01-30 14:30</td>
+                                        <td>000001</td>
+                                        <td>短期</td>
+                                        <td class="positive">+2.5%</td>
+                                        <td class="positive">+2.3%</td>
+                                        <td><span class="badge badge-success">准确</span></td>
+                                        <td><button class="btn-icon"><span>👁️</span></button></td>
+                                        <td><button class="btn-icon btn-add" onclick="addToWatchlistFromHistory('000001')" title="添加到观测池"><span>➕</span></button></td>
+                                    </tr>
+                                    <tr>
+                                        <td>2026-01-29 10:15</td>
+                                        <td>600036</td>
+                                        <td>中期</td>
+                                        <td>¥38.50</td>
+                                        <td>进行中</td>
+                                        <td><span class="badge badge-info">待验证</span></td>
+                                        <td><button class="btn-icon"><span>👁️</span></button></td>
+                                        <td><button class="btn-icon btn-add" onclick="addToWatchlistFromHistory('600036')" title="添加到观测池"><span>➕</span></button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics View -->
+            <div class="view" id="analyticsView">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>数据分析</h2>
+                        <button class="btn btn-primary" id="refreshAnalyticsBtn" onclick="refreshAnalytics()">
+                            🔄 刷新数据
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="analytics-grid">
+                            <div class="analytics-card">
+                                <h3>板块热度分析 <span id="sectorSource" class="source-tag"></span></h3>
+                                <canvas id="sectorChart"></canvas>
+                                <div id="sectorDetails" class="sector-details"></div>
+                            </div>
+                            <div class="analytics-card">
+                                <h3>市场情绪指标</h3>
+                                <canvas id="sentimentChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- 板块热力图 -->
+                        <div class="heatmap-section">
+                            <div class="card-header">
+                                <div class="heatmap-title-row">
+                                    <h3>全市场板块热力图 <span id="heatmapCount" class="count-tag"></span></h3>
+                                    <div class="view-toggle-btns">
+                                        <button class="toggle-btn active" id="gridViewBtn" onclick="switchHeatmapView('grid')">
+                                            ⊞ 网格
+                                        </button>
+                                        <button class="toggle-btn" id="treemapViewBtn" onclick="switchHeatmapView('treemap')">
+                                            ▦ 树图
+                                        </button>
+                                    </div>
+                                </div>
+                                 <div class="heatmap-legend">
+                                    <div style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                                        <strong>矩形大小:</strong> 板块市场权重（个股数量×热度指数）| <strong>颜色:</strong> 涨跌幅
+                                    </div>
+                                    <span class="legend-item"><span class="legend-color" style="background: #8B0000;"></span>≥10%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #B22222;"></span>8-10%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #DC143C;"></span>5-8%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #FF6B6B;"></span>2-5%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #FFB3B3;"></span>1-2%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #FFFFCC;"></span>-1%~1%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #C8E6C9;"></span>-3%~-1%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #81C784;"></span>-5%~-3%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #43A047;"></span>-8%~-5%</span>
+                                    <span class="legend-item"><span class="legend-color" style="background: #1B5E20;"></span>≤-8%</span>
+                                </div>
+                            </div>
+                            <div id="sectorHeatmap" class="sector-heatmap"></div>
+                            <div id="sectorTreemap" class="sector-treemap" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div class="view" id="settingsView">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>系统设置</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="settings-section">
+                            <h3>通知设置</h3>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" checked>
+                                    <span>价格预警通知</span>
+                                </label>
+                            </div>
+                            <div class="setting-item">
+                                <label>
+                                    <input type="checkbox" checked>
+                                    <span>预测完成通知</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>数据源设置</h3>
+                            <div class="setting-item">
+                                <label>默认数据源</label>
+                                <select class="setting-select">
+                                    <option selected>新浪财经</option>
+                                    <option>东方财富</option>
+                                    <option>AKShare</option>
+                                    <option>TuShare</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="settings-section">
+                            <h3>关于</h3>
+                            <p><strong>SIAPS</strong> - 股票智能分析预测系统</p>
+                            <p style="color: var(--text-secondary); font-size: 0.9em; margin-left: 1em;">
+                                <strong>S</strong>tock <strong>I</strong>ntelligent <strong>A</strong>nalysis & <strong>P</strong>rediction <strong>S</strong>ystem<br>
+                                (股票智能分析与预测系统)
+                            </p>
+                            <p>版本: 1.0.0</p>
+                            <p>基于机器学习和深度学习的智能预测系统</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Stock Modal -->
+    <div class="modal-overlay" id="addStockModal" style="display: none;">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>添加股票到观测池</h3>
+                <button class="modal-close" onclick="closeAddStockModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>股票代码 <span class="required">*</span></label>
+                    <input type="text" id="modalStockCode" placeholder="例如: 000001" class="form-input">
+                    <small class="form-hint">添加后可在预测页面进行股票分析</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddStockModal()">取消</button>
+                <button class="btn btn-primary" onclick="submitAddStock()">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>正在分析中...</p>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

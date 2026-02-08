@@ -1,0 +1,32 @@
+# Production dependencies for cloud deployment (Railway/Render optimized)
+# Lightweight version without heavy ML libraries
+# Optimized to avoid build timeouts
+
+# Core
+python-dotenv>=1.0.0
+
+# Web Framework
+Flask>=3.0.0
+Flask-CORS>=4.0.0
+gunicorn>=21.2.0
+
+# Data handling - using binary wheels for faster installation
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+
+# Data acquisition
+akshare>=1.12.0
+
+# Machine Learning (required for predictions)
+scikit-learn>=1.3.0
+
+# Database
+sqlalchemy>=2.0.0
+
+# Utilities
+python-dateutil>=2.8.2
+pytz>=2023.3
+
+# Note: matplotlib removed for cloud deployment to reduce build time
+# The web UI doesn't require matplotlib for rendering
