@@ -4,11 +4,15 @@
 
 本项目最近修复了 Railway 部署的 Nix 错误和其他问题：
 
-### 🔧 最新修复 (2026-02)
-1. **迁移到 Docker**: 从不稳定的 Nixpacks 迁移到可靠的 Docker 构建
-2. **添加 Dockerfile**: 明确的构建步骤，更好的控制
-3. **更新 railway.json**: 使用 DOCKERFILE 构建器
-4. **添加 .dockerignore**: 优化 Docker 构建大小和速度
+### 🔧 最新修复 (2026-02-08)
+1. **修复 PORT 变量问题**: 修复 healthcheck 失败的根本原因
+   - Dockerfile CMD 现在正确处理 PORT 环境变量
+   - 使用 `${PORT:-8080}` 语法提供默认端口
+   - 确保 gunicorn 在任何情况下都能正确绑定端口
+2. **迁移到 Docker**: 从不稳定的 Nixpacks 迁移到可靠的 Docker 构建
+3. **添加 Dockerfile**: 明确的构建步骤，更好的控制
+4. **更新 railway.json**: 使用 DOCKERFILE 构建器
+5. **添加 .dockerignore**: 优化 Docker 构建大小和速度
 
 ### 🔧 之前的修复
 1. **优化依赖**: 移除了 matplotlib 等耗时的包（构建时间减少 60%+）
@@ -81,6 +85,18 @@ FLASK_ENV=production
 
 ### 🔧 常见问题
 
+#### Q: 出现 Healthcheck 失败怎么办？
+**A**: 这个问题已在 2026-02-08 修复！根本原因是 PORT 环境变量处理不当：
+1. **问题**: Dockerfile CMD 中的 `$PORT` 在构建时为空，导致 gunicorn 无法绑定端口
+2. **修复**: 使用 `${PORT:-8080}` 语法，默认端口为 8080
+3. **结果**: 应用现在可以正常启动并响应 healthcheck
+
+如果您仍然遇到 healthcheck 失败：
+1. 确保拉取最新代码（包含 PORT 变量修复）
+2. 在 Railway 中重新部署
+3. 查看部署日志确认 gunicorn 成功启动
+4. 预期日志：`Listening at: http://0.0.0.0:<port>`
+
 #### Q: 出现 Nix 错误怎么办？
 **A**: 项目已从 Nixpacks 迁移到 Docker 构建，这个问题已解决：
 1. 确保拉取最新代码（包含 Dockerfile）
@@ -95,6 +111,7 @@ FLASK_ENV=production
 4. 确保使用的是 `requirements-prod.txt` 而不是 `requirements.txt`
 
 **已知修复**：
+- ✅ **PORT 变量问题已修复**（2026-02-08）- Healthcheck 现在可以正常工作
 - ✅ 迁移到 Docker 构建（更稳定可靠）
 - ✅ 移除了 matplotlib（构建时间减少 60%+）
 - ✅ 使用 --no-cache-dir 减少内存使用
