@@ -52,7 +52,7 @@ class MultiModelPredictor:
             pred_points = 3   # 3天
             window_size = 10  # 使用10天历史数据
         elif timeframe == '30day':
-            pred_points = 90  # 3个月（实际为中期目标）
+            pred_points = 90  # 90天（约3个月）
             window_size = 30  # 使用30天历史数据
         else:
             # 默认3天预测
