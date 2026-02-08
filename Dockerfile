@@ -32,8 +32,8 @@ COPY . .
 # Create /tmp/data directory for cloud environment
 RUN mkdir -p /tmp/data
 
-# Expose port (Railway will set the PORT environment variable)
-EXPOSE $PORT
+# Expose port for documentation (Railway sets PORT at runtime)
+EXPOSE 8080
 
 # Start command using gunicorn
 CMD gunicorn --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile - --log-level info app:app

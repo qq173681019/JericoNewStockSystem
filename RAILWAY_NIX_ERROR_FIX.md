@@ -120,8 +120,8 @@ However, the Docker approach is recommended for better reliability and control.
 - `requirements-prod.txt` - Python dependencies for production
 
 ## References
-- [Railway Docker Documentation](https://docs.railway.app/deploy/dockerfiles)
-- [Railway Nixpacks Deprecation](https://docs.railway.com/reference/nixpacks)
+- [Railway Docker Documentation](https://docs.railway.app/guides/dockerfiles)
+- [Railway Nixpacks Deprecation](https://docs.railway.app/reference/nixpacks)
 - [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
 
 ---
