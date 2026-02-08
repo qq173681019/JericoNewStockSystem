@@ -296,10 +296,10 @@ def predict_stock_multi_timeframe(stock_code):
         logger.info(f"Multi-timeframe prediction requested for stock: {stock_code}, timeframe: {timeframe}")
         
         # Validate timeframe
-        if timeframe not in ['1hour', '3day', '30day']:
+        if timeframe not in ['30min', '1day']:
             return jsonify({
                 'success': False,
-                'error': 'Invalid timeframe. Must be 1hour, 3day, or 30day',
+                'error': 'Invalid timeframe. Must be 30min or 1day',
                 'message': 'Invalid timeframe parameter'
             }), 400
         
@@ -316,7 +316,7 @@ def predict_stock_multi_timeframe(stock_code):
         
         # Fetch historical data for prediction
         historical_df = None
-        days_to_fetch = 60 if timeframe == '30day' else 30
+        days_to_fetch = 30  # Use 30 days for both timeframes
         
         if data_fetcher:
             try:
@@ -382,21 +382,19 @@ def predict_stock_multi_timeframe(stock_code):
                 current_price = 10 + (hash(stock_code) % 50)
             
             # Generate simple fallback prediction with minimal change
-            if timeframe == '1hour':
-                pred_points = 12
-                timeframe_label = '1小时'
-            elif timeframe == '3day':
-                pred_points = 3
-                timeframe_label = '3天'
-            else:  # 30day
-                pred_points = 90
-                timeframe_label = '30天(3个月)'
+            if timeframe == '30min':
+                pred_points = 6
+                timeframe_label = '30分钟'
+            else:  # 1day
+                pred_points = 1
+                timeframe_label = '1天'
             
             # Simple linear prediction with small increments
+            # IMPORTANT: This is DEMO data only - real predictions use multi-model ensemble
             predicted_prices = [current_price * (1 + 0.01 * i) for i in range(pred_points)]
-            price_changes = [1.0] * pred_points
-            confidence = 0.50  # Low confidence for fallback data
-            advice = '持有'
+            price_changes = [0.01 * (i + 1) * 100 for i in range(pred_points)]  # Progressive changes
+            confidence = 0.30  # Very low confidence for fallback data
+            advice = '无法预测（数据不足）'
             direction = 'neutral'
         else:
             # Extract prediction results
@@ -416,14 +414,13 @@ def predict_stock_multi_timeframe(stock_code):
                 direction = 'neutral'
             
             # Get timeframe label
-            if timeframe == '1hour':
-                timeframe_label = '1小时'
-            elif timeframe == '3day':
-                timeframe_label = '3天'
+            if timeframe == '30min':
+                timeframe_label = '30分钟'
             else:
-                timeframe_label = '30天(3个月)'
+                timeframe_label = '1天'
         
         # Prepare result
+        is_fallback = prediction_result is None or 'error' in prediction_result
         result = {
             'success': True,
             'stockCode': stock_code,
@@ -431,6 +428,7 @@ def predict_stock_multi_timeframe(stock_code):
             'currentPrice': round(current_price, 2),
             'timeframe': timeframe,
             'timeframeLabel': timeframe_label,
+            'isFallbackData': is_fallback,  # Flag to indicate if using demo data
             'prediction': {
                 'prices': [round(p, 2) for p in predicted_prices],
                 'changes': [round(c, 2) for c in price_changes],
@@ -440,7 +438,7 @@ def predict_stock_multi_timeframe(stock_code):
                 'targetPrice': round(predicted_prices[-1], 2) if predicted_prices else current_price,
                 'expectedChange': round(price_changes[-1], 2) if price_changes else 0
             },
-            'message': 'Multi-timeframe prediction completed successfully'
+            'message': '⚠️ 无法获取真实数据，显示模拟预测' if is_fallback else 'Multi-timeframe prediction completed successfully'
         }
         
         # Add technical indicators if available

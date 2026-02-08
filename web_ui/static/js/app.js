@@ -404,7 +404,7 @@ async function runPrediction() {
 
 // Load multi-timeframe predictions
 async function loadMultiTimeframePredictions(stockCode) {
-    const timeframes = ['1hour', '3day', '30day'];
+    const timeframes = ['30min', '1day'];
     
     for (const timeframe of timeframes) {
         // Set loading state
@@ -461,11 +461,21 @@ function setTimeframeError(timeframe, message) {
 
 // Update timeframe card with prediction data
 function updateTimeframeCard(timeframe, data) {
+    // Check if this is fallback/demo data
+    const isFallback = data.isFallbackData === true;
+    
     // Update status
     const statusElement = document.getElementById(`status${timeframe}`);
     if (statusElement) {
-        statusElement.textContent = '✓';
-        statusElement.className = 'timeframe-status success';
+        if (isFallback) {
+            statusElement.textContent = '⚠️';
+            statusElement.className = 'timeframe-status warning';
+            statusElement.title = '数据不足，显示模拟预测';
+        } else {
+            statusElement.textContent = '✓';
+            statusElement.className = 'timeframe-status success';
+            statusElement.title = '';
+        }
     }
     
     // Update price
@@ -481,13 +491,19 @@ function updateTimeframeCard(timeframe, data) {
         const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
         changeElement.textContent = changeText;
         
-        // Apply color based on direction
-        if (change > 0) {
+        // Apply color based on direction - muted if fallback
+        if (isFallback) {
+            changeElement.className = 'change-number neutral';
+            changeElement.style.opacity = '0.5';
+        } else if (change > 0) {
             changeElement.className = 'change-number positive';
+            changeElement.style.opacity = '1';
         } else if (change < 0) {
             changeElement.className = 'change-number negative';
+            changeElement.style.opacity = '1';
         } else {
             changeElement.className = 'change-number neutral';
+            changeElement.style.opacity = '1';
         }
     }
     
@@ -496,6 +512,15 @@ function updateTimeframeCard(timeframe, data) {
     if (confidenceElement && data.prediction && data.prediction.confidence !== undefined) {
         const confidence = (data.prediction.confidence * 100).toFixed(0);
         confidenceElement.textContent = `${confidence}%`;
+        
+        // Style based on confidence level
+        if (isFallback || data.prediction.confidence < 0.4) {
+            confidenceElement.style.color = '#ff6b6b';
+        } else if (data.prediction.confidence < 0.7) {
+            confidenceElement.style.color = '#ffa500';
+        } else {
+            confidenceElement.style.color = '#51cf66';
+        }
     }
 }
 
