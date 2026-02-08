@@ -36,6 +36,6 @@ RUN mkdir -p /tmp/data
 EXPOSE 8080
 
 # Start command using gunicorn
-# Railway will provide the PORT environment variable
-# Using exec form to ensure proper signal handling
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile - --log-level info app:app"]
+# Railway will provide the PORT environment variable at runtime
+# Using shell form to enable environment variable expansion
+CMD sh -c "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile - --log-level info app:app"
