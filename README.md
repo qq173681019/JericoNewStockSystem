@@ -28,6 +28,7 @@
 ### 🔧 主要改进
 
 本版本已解决之前的部署问题：
+- ✅ **修复了 Railway Nix 错误** - 从 Nixpacks 迁移到 Docker 构建 ([详情](RAILWAY_NIX_ERROR_FIX.md))
 - ✅ 修复了云环境数据库路径问题（使用 `/tmp` 目录）
 - ✅ 优化了 Vercel 和 Railway 配置文件
 - ✅ 使用 Gunicorn 替代 Flask 开发服务器
