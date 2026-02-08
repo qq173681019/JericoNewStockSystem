@@ -35,7 +35,7 @@ RUN mkdir -p /tmp/data
 # Expose port for documentation (Railway sets PORT at runtime)
 EXPOSE 8080
 
-# Start command using gunicorn with PORT fallback
-# Use sh -c to ensure $PORT is expanded at runtime, not build time
-# Defaults to 8080 if PORT is not set
-CMD sh -c "gunicorn --bind 0.0.0.0:\${PORT:-8080} --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile - --log-level info app:app"
+# Start command using gunicorn
+# Railway will provide the PORT environment variable
+# Using exec form to ensure proper signal handling
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 2 --threads 4 --timeout 120 --access-logfile - --error-logfile - --log-level info app:app"]
