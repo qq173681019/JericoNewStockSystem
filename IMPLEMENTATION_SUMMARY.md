@@ -84,7 +84,7 @@ The user referenced https://github.com/qq173681019/Kronos-custom as their improv
 | GPU Required | No | Yes (4GB+) |
 | Deployment | Simple (one-click) | Complex (CUDA) |
 | Speed | <1s | 2-5s |
-| Cloud Support | ✅ Vercel | ❌ Needs GPU |
+| Cloud Support | ✅ Vercel/Railway | ❌ Needs GPU |
 | Cost | Low | High |
 | Accuracy | Good | Excellent |
 

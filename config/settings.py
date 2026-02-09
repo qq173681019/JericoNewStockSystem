@@ -17,11 +17,14 @@ except ImportError:
 ROOT_DIR = Path(__file__).parent.parent
 SRC_DIR = ROOT_DIR / "src"
 
-# Use /tmp for data in cloud environments (Vercel serverless, etc.)
+# Use /tmp for data in cloud environments (Railway, Vercel, etc.)
 # These platforms have read-only file systems except for /tmp
-# Vercel provides VERCEL environment variable
+# Railway provides RAILWAY_ENVIRONMENT and RAILWAY_PUBLIC_DOMAIN
 IS_CLOUD_ENV = (
-    os.getenv("VERCEL") is not None
+    os.getenv("RAILWAY_ENVIRONMENT") is not None or
+    os.getenv("RAILWAY_PUBLIC_DOMAIN") is not None or 
+    os.getenv("VERCEL") is not None or 
+    os.getenv("RENDER") is not None
 )
 if IS_CLOUD_ENV:
     DATA_DIR = Path("/tmp/data")

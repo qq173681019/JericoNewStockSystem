@@ -64,7 +64,7 @@ numpy>=1.24.0
 **当前系统**:
 ```
 依赖: ~100MB (pandas, numpy, scikit-learn)
-平台: Vercel (无服务器)
+平台: Vercel/Railway (无服务器)
 部署: 一键部署，<5秒启动
 ```
 
@@ -76,7 +76,7 @@ numpy>=1.24.0
 成本: $50-200/月
 ```
 
-**Vercel问题**:
+**Vercel/Railway问题**:
 ```
 错误: RangeError [ERR_OUT_OF_RANGE]: 
       The value of "size" is out of range
@@ -92,7 +92,7 @@ numpy>=1.24.0
 - 服务器负载高
 
 **GPU需求**:
-- Vercel不提供GPU
+- Vercel/Railway不提供GPU
 - 需要迁移到AWS SageMaker或GCP AI Platform
 - 显著增加复杂度和成本
 
@@ -185,7 +185,7 @@ def predict_90day_with_kronos(stock_data):
 
 **架构**:
 ```
-[当前系统 - Vercel]
+[当前系统 - Vercel/Railway]
          |
          | HTTP API
          v
@@ -360,7 +360,7 @@ class MultiModelPredictor:
 
 是的，技术上**可以**使用Kronos本身的算法，但会遇到以下挑战：
 
-1. ❌ 需要GPU服务器（Vercel不支持）
+1. ❌ 需要GPU服务器（Vercel/Railway不支持）
 2. ❌ 依赖包太大（3.5GB+导致部署失败）
 3. ❌ 成本显著增加（$50-200/月）
 4. ❌ 部署复杂度大幅提升

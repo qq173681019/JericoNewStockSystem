@@ -51,7 +51,7 @@ When Vercel's build system (based on Node.js) tried to download and process thes
    **生产环境** (`requirements.txt`):
    - 仅包含 Web 应用必需的依赖
    - 移除了所有大型 ML 库
-   - 优化用于 Vercel 无服务器部署
+   - 优化用于云部署（Vercel, Railway, Render）
 
    **Development** (`requirements-dev.txt`):
    - Contains full ML libraries (PyTorch, TensorFlow, Prophet)
@@ -61,7 +61,7 @@ When Vercel's build system (based on Node.js) tried to download and process thes
    **Production** (`requirements.txt`):
    - Only contains dependencies required for web app
    - Removed all large ML libraries
-   - Optimized for Vercel serverless deployment
+   - Optimized for cloud deployment (Vercel, Railway, Render)
 
 ### 为什么这样修改？ / Why This Change?
 
@@ -101,6 +101,17 @@ Vercel will automatically use `requirements.txt` (lightweight version), no addit
 ```bash
 # 直接推送到 GitHub，Vercel 自动部署
 git push
+```
+
+### Railway/Render 部署 / Railway/Render Deployment
+
+同样会使用 `requirements.txt`，部署速度更快：
+
+Will also use `requirements.txt`, faster deployment:
+
+```bash
+git push
+# Railway/Render 会自动检测并部署
 ```
 
 ## 验证修复 / Verify Fix

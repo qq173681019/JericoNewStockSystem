@@ -1,0 +1,28 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # 只有当 main 分支有变动时才触发
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 下载你的代码
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. 如果是前端项目（如 React/Vue/Dashboard），可以在这里运行构建命令
+      # 如果只是纯 HTML/CSS 页面，可以跳过下面这两步
+      # - name: Install and Build
+      #   run: |
+      #     npm install
+      #     npm run build
+
+      # 3. 核心步骤：将打包后的内容部署到 gh-pages 分支
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: . # 这里填写你要发布的文件夹。如果是纯静态页就填 "."；如果是打包后的就填 "dist" 或 "build"
+          branch: gh-pages # 自动推送到这个分支
