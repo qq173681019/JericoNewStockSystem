@@ -8,8 +8,10 @@ FROM python:3.11.7-slim
 WORKDIR /app
 
 # Install system dependencies required for building Python packages
+# curl is needed for health checks
 RUN apt-get update && apt-get install -y \
     gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -34,9 +36,10 @@ ENV RAILWAY_ENVIRONMENT=production
 # Expose port (Railway will set PORT via environment variable)
 EXPOSE 8080
 
-# Health check
+# Health check - uses curl for reliable PORT variable expansion
+# Railway handles network security; binding to 0.0.0.0 is standard for containers
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:${PORT:-8080}/')" || exit 1
+    CMD curl -f http://localhost:${PORT:-8080}/ || exit 1
 
 # Start command using Gunicorn
 # - Single worker for Railway's resource limits
