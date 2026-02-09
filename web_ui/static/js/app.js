@@ -183,6 +183,8 @@ function displayPredictionResults(data) {
     document.getElementById('boll').textContent = data.technicalIndicators.boll;
     
     // Apply color classes based on prediction
+    // Note: Following Chinese stock market convention where red=up/rise, green=down/fall
+    // CSS variables: --success-color (red #ef4444), --danger-color (green #10b981)
     const shortTermElement = document.getElementById('shortTermPrediction');
     const mediumTermElement = document.getElementById('mediumTermPrediction');
     const adviceElement = document.getElementById('tradingAdvice');
@@ -194,6 +196,8 @@ function displayPredictionResults(data) {
     }
     
     // Apply color to medium-term prediction based on comparison with current price
+    // Note: Following Chinese stock market convention (red=up, green=down)
+    // --success-color is red (#ef4444) and --danger-color is green (#10b981)
     if (data.mediumTermPrediction && data.currentPrice) {
         // Extract price from format "¥XX.XX"
         const mediumPriceMatch = data.mediumTermPrediction.match(/[\d.]+/);
@@ -201,9 +205,9 @@ function displayPredictionResults(data) {
             const mediumPrice = parseFloat(mediumPriceMatch[0]);
             const currentPrice = parseFloat(data.currentPrice);
             if (mediumPrice > currentPrice) {
-                mediumTermElement.style.color = 'var(--success-color)'; // Red for higher (upward)
+                mediumTermElement.style.color = 'var(--success-color)'; // Red for higher price (upward)
             } else if (mediumPrice < currentPrice) {
-                mediumTermElement.style.color = 'var(--danger-color)'; // Green for lower (downward)
+                mediumTermElement.style.color = 'var(--danger-color)'; // Green for lower price (downward)
             } else {
                 mediumTermElement.style.color = 'var(--text-primary)'; // Default for equal
             }
