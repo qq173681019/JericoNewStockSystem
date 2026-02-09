@@ -184,12 +184,30 @@ function displayPredictionResults(data) {
     
     // Apply color classes based on prediction
     const shortTermElement = document.getElementById('shortTermPrediction');
+    const mediumTermElement = document.getElementById('mediumTermPrediction');
     const adviceElement = document.getElementById('tradingAdvice');
     
     if (data.shortTermPrediction.startsWith('+')) {
         shortTermElement.style.color = 'var(--success-color)';
     } else {
         shortTermElement.style.color = 'var(--danger-color)';
+    }
+    
+    // Apply color to medium-term prediction based on comparison with current price
+    if (data.mediumTermPrediction && data.currentPrice) {
+        // Extract price from format "¥XX.XX"
+        const mediumPriceMatch = data.mediumTermPrediction.match(/[\d.]+/);
+        if (mediumPriceMatch) {
+            const mediumPrice = parseFloat(mediumPriceMatch[0]);
+            const currentPrice = parseFloat(data.currentPrice);
+            if (mediumPrice > currentPrice) {
+                mediumTermElement.style.color = 'var(--success-color)'; // Red for higher (upward)
+            } else if (mediumPrice < currentPrice) {
+                mediumTermElement.style.color = 'var(--danger-color)'; // Green for lower (downward)
+            } else {
+                mediumTermElement.style.color = 'var(--text-primary)'; // Default for equal
+            }
+        }
     }
     
     if (data.tradingAdvice === '买入') {
@@ -482,6 +500,24 @@ function updateTimeframeCard(timeframe, data) {
     const priceElement = document.getElementById(`price${timeframe}`);
     if (priceElement && data.prediction && data.prediction.targetPrice) {
         priceElement.textContent = `¥${data.prediction.targetPrice}`;
+        
+        // Apply color based on expected change direction
+        if (data.prediction.expectedChange !== undefined) {
+            const change = data.prediction.expectedChange;
+            if (isFallback) {
+                priceElement.className = 'value-number neutral';
+                priceElement.style.opacity = '0.5';
+            } else if (change > 0) {
+                priceElement.className = 'value-number positive';
+                priceElement.style.opacity = '1';
+            } else if (change < 0) {
+                priceElement.className = 'value-number negative';
+                priceElement.style.opacity = '1';
+            } else {
+                priceElement.className = 'value-number neutral';
+                priceElement.style.opacity = '1';
+            }
+        }
     }
     
     // Update change
