@@ -17,6 +17,7 @@ const quickSearch = document.getElementById('quickSearch');
 
 // ===== Configuration Constants =====
 const MAX_PREDICTION_HISTORY = 100; // Maximum number of prediction entries to keep in localStorage
+const FETCH_TIMEOUT = 30000; // 30 seconds timeout for API requests
 
 // Backup/Import messages
 const IMPORT_MODE_MESSAGE = '选择导入模式：\n\n点击"确定"= 合并模式（保留现有数据，更新重复项）\n点击"取消"= 替换模式（清空现有数据）\n\n建议选择"确定"进行合并';
@@ -24,6 +25,34 @@ const IMPORT_MODE_MESSAGE = '选择导入模式：\n\n点击"确定"= 合并模�
 // Helper function for consistent timestamp format
 function formatTimestamp() {
     return new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+}
+
+// ===== Helper Function for Fetch with Timeout =====
+/**
+ * Fetch with timeout to prevent hanging requests
+ * @param {string} url - The URL to fetch
+ * @param {object} options - Fetch options
+ * @param {number} timeout - Timeout in milliseconds (default: FETCH_TIMEOUT)
+ * @returns {Promise<Response>}
+ */
+async function fetchWithTimeout(url, options = {}, timeout = FETCH_TIMEOUT) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        return response;
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') {
+            throw new Error('请求超时，请检查网络连接或稍后重试');
+        }
+        throw error;
+    }
 }
 
 // ===== Theme Management =====
@@ -427,8 +456,8 @@ async function runPrediction() {
     showLoading();
     
     try {
-        // Call backend API for real prediction
-        const response = await fetch(`/api/predict/${stockCode}`);
+        // Call backend API for real prediction with timeout
+        const response = await fetchWithTimeout(`/api/predict/${stockCode}`);
         const result = await response.json();
         
         if (result.success) {
@@ -461,11 +490,16 @@ async function runPrediction() {
             // Show error message instead of displaying predictions
             hideLoading();
             displayErrorMessage(result.message || '预测失败，请稍后重试', result.error);
+            // Alert user about the error
+            alert(`❌ 预测失败\n\n${result.message || '无法获取股票数据'}\n\n请检查：\n• 股票代码是否正确\n• 是否在交易时间内\n• 网络连接是否正常`);
         }
     } catch (error) {
         console.error('Prediction error:', error);
         hideLoading();
-        displayErrorMessage('网络错误，无法连接到服务器', 'network_error');
+        const errorMsg = error.message || '网络错误，无法连接到服务器';
+        displayErrorMessage(errorMsg, 'network_error');
+        // Alert user about the error
+        alert(`❌ 网络错误\n\n${errorMsg}\n\n请检查：\n• 网络连接是否正常\n• 服务器是否可访问\n• 稍后重试`);
     }
 }
 
@@ -478,7 +512,7 @@ async function loadMultiTimeframePredictions(stockCode) {
         setTimeframeLoading(timeframe, true);
         
         try {
-            const response = await fetch(`/api/predict/multi/${stockCode}?timeframe=${timeframe}`);
+            const response = await fetchWithTimeout(`/api/predict/multi/${stockCode}?timeframe=${timeframe}`);
             const result = await response.json();
             
             if (result.success) {
@@ -721,7 +755,7 @@ async function submitAddStock() {
     try {
         const requestBody = { stockCode: stockCode };
         
-        const response = await fetch('/api/watchlist', {
+        const response = await fetchWithTimeout('/api/watchlist', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -733,13 +767,13 @@ async function submitAddStock() {
         
         if (result.success) {
             await loadWatchlist();
-            alert(result.message || `成功添加 ${stockCode} 到观测池`);
+            alert(`✅ 成功添加\n\n${result.message || `已将 ${stockCode} 添加到观测池`}`);
         } else {
-            alert(result.error || '添加失败');
+            alert(`❌ 添加失败\n\n${result.error || '无法添加到观测池'}\n\n请检查：\n• 股票代码是否正确\n• 该股票是否已在观测池中`);
         }
     } catch (error) {
         console.error('Error adding to watchlist:', error);
-        alert('添加失败: ' + error.message);
+        alert(`❌ 添加失败\n\n${error.message}\n\n请检查网络连接或稍后重试`);
     } finally {
         hideLoading();
     }
@@ -792,6 +826,7 @@ refreshWatchlistBtn.addEventListener('click', async () => {
     } catch (error) {
         console.error('Refresh failed:', error);
         refreshWatchlistBtn.innerHTML = '<span>❌</span> 刷新失败';
+        alert(`❌ 观测池刷新失败\n\n${error.message}\n\n请检查网络连接或稍后重试`);
         setTimeout(() => {
             refreshWatchlistBtn.innerHTML = '<span>🔄</span> 刷新数据';
             refreshWatchlistBtn.disabled = false;
@@ -807,7 +842,7 @@ if (exportWatchlistBtn) {
             exportWatchlistBtn.disabled = true;
             exportWatchlistBtn.innerHTML = '<span>⏳</span> 导出中...';
             
-            const response = await fetch('/api/watchlist/export');
+            const response = await fetchWithTimeout('/api/watchlist/export');
             const result = await response.json();
             
             if (result.success) {
@@ -834,7 +869,7 @@ if (exportWatchlistBtn) {
             }
         } catch (error) {
             console.error('Export error:', error);
-            alert('导出失败: ' + error.message);
+            alert(`❌ 导出失败\n\n${error.message}\n\n请检查网络连接或稍后重试`);
             exportWatchlistBtn.innerHTML = '<span>❌</span> 导出失败';
             setTimeout(() => {
                 exportWatchlistBtn.innerHTML = '<span>📥</span> 导出';
@@ -869,7 +904,7 @@ if (importWatchlistBtn && importFileInput) {
                     // Ask user if they want to merge or replace with clearer message
                     const merge = confirm(IMPORT_MODE_MESSAGE);
                     
-                    const response = await fetch('/api/watchlist/import', {
+                    const response = await fetchWithTimeout('/api/watchlist/import', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({data, merge})
@@ -878,7 +913,7 @@ if (importWatchlistBtn && importFileInput) {
                     const result = await response.json();
                     
                     if (result.success) {
-                        alert(result.message);
+                        alert(`✅ 导入成功\n\n${result.message}`);
                         await loadWatchlist();
                         importWatchlistBtn.innerHTML = '<span>✅</span> 已导入';
                     } else {
@@ -886,7 +921,7 @@ if (importWatchlistBtn && importFileInput) {
                     }
                 } catch (error) {
                     console.error('Import error:', error);
-                    alert('导入失败: ' + error.message);
+                    alert(`❌ 导入失败\n\n${error.message}\n\n请检查：\n• 文件格式是否正确\n• 网络连接是否正常`);
                     importWatchlistBtn.innerHTML = '<span>❌</span> 导入失败';
                 } finally {
                     setTimeout(() => {
@@ -901,7 +936,7 @@ if (importWatchlistBtn && importFileInput) {
             importFileInput.value = '';
         } catch (error) {
             console.error('File read error:', error);
-            alert('读取文件失败: ' + error.message);
+            alert(`❌ 读取文件失败\n\n${error.message}\n\n请检查文件是否有效`);
             importWatchlistBtn.innerHTML = '<span>❌</span> 导入失败';
             setTimeout(() => {
                 importWatchlistBtn.innerHTML = '<span>📤</span> 导入';
@@ -932,7 +967,7 @@ window.addToWatchlistFromHistory = async function(stockCode) {
 // Quick add to watchlist without prompt
 async function addToWatchlistQuick(stockCode) {
     try {
-        const response = await fetch('/api/watchlist', {
+        const response = await fetchWithTimeout('/api/watchlist', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -943,13 +978,13 @@ async function addToWatchlistQuick(stockCode) {
         const result = await response.json();
         
         if (result.success) {
-            alert(result.message || `成功添加 ${stockCode} 到观测池`);
+            alert(`✅ 成功添加\n\n${result.message || `已将 ${stockCode} 添加到观测池`}`);
         } else {
-            alert(result.error || '添加失败');
+            alert(`❌ 添加失败\n\n${result.error || '无法添加到观测池'}`);
         }
     } catch (error) {
         console.error('Error adding to watchlist:', error);
-        alert('添加失败: ' + error.message);
+        alert(`❌ 添加失败\n\n${error.message}`);
     }
 }
 
@@ -957,7 +992,7 @@ async function addToWatchlist(stockCode) {
     showLoading();
     
     try {
-        const response = await fetch('/api/watchlist', {
+        const response = await fetchWithTimeout('/api/watchlist', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -998,19 +1033,28 @@ async function loadWatchlist() {
     }
     
     try {
-        const response = await fetch('/api/watchlist');
+        const response = await fetchWithTimeout('/api/watchlist');
         const result = await response.json();
         
         if (result.success && result.data) {
             // Save to localStorage for persistence
             localStorage.setItem('watchlistData', JSON.stringify(result.data));
             renderWatchlistData(result.data, tbody);
+        } else {
+            throw new Error(result.error || '无法加载观测池数据');
         }
     } catch (error) {
         console.error('Error loading watchlist:', error);
         // If we have cached data, keep showing it
         if (!cachedData) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">加载失败</td></tr>';
+            alert(`❌ 观测池加载失败\n\n${error.message}\n\n请检查：\n• 网络连接是否正常\n• 稍后重试`);
+        } else {
+            // Only alert if user actively tries to refresh (not on first load)
+            const isManualRefresh = event && event.isTrusted;
+            if (isManualRefresh) {
+                alert(`⚠️ 观测池刷新失败\n\n${error.message}\n\n正在显示缓存数据`);
+            }
         }
     }
 }
@@ -1054,7 +1098,7 @@ async function removeFromWatchlist(stockCode) {
     }
     
     try {
-        const response = await fetch('/api/watchlist', {
+        const response = await fetchWithTimeout('/api/watchlist', {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
@@ -1068,12 +1112,13 @@ async function removeFromWatchlist(stockCode) {
             // Clear cache to force reload
             localStorage.removeItem('watchlistData');
             await loadWatchlist();
+            alert(`✅ 删除成功\n\n已从观测池移除 ${stockCode}`);
         } else {
-            alert(result.error || '删除失败');
+            alert(`❌ 删除失败\n\n${result.error || '无法删除该股票'}`);
         }
     } catch (error) {
         console.error('Error removing from watchlist:', error);
-        alert('删除失败: ' + error.message);
+        alert(`❌ 删除失败\n\n${error.message}`);
     }
 }
 
@@ -1107,6 +1152,7 @@ async function refreshAnalytics() {
         }
     } catch (error) {
         console.error('Refresh failed:', error);
+        alert(`❌ 数据分析刷新失败\n\n${error.message}\n\n请检查网络连接或稍后重试`);
         if (btn) {
             btn.innerHTML = '❌ 刷新失败';
             setTimeout(() => {
@@ -1134,7 +1180,7 @@ async function loadAnalyticsData() {
     
     try {
         console.log('Loading analytics data...');
-        const response = await fetch('/api/analytics');
+        const response = await fetchWithTimeout('/api/analytics');
         const data = await response.json();
         
         if (data.success || data.sectorHeat) {
@@ -1143,10 +1189,12 @@ async function loadAnalyticsData() {
             renderAnalyticsData(data);
             console.log('✓ Analytics charts rendered');
         } else {
-            console.error('Failed to load analytics data');
+            const errorMsg = '无法加载数据分析，使用演示数据';
+            console.error(errorMsg);
             if (!cachedAnalytics) {
                 drawDemoSectorChart();
                 drawDemoSentimentChart();
+                alert(`⚠️ ${errorMsg}\n\n请检查：\n• 网络连接是否正常\n• 稍后重试获取真实数据`);
             }
         }
     } catch (error) {
@@ -1155,6 +1203,13 @@ async function loadAnalyticsData() {
         if (!cachedAnalytics) {
             drawDemoSectorChart();
             drawDemoSentimentChart();
+            alert(`❌ 数据分析加载失败\n\n${error.message}\n\n正在显示演示数据\n\n请检查网络连接或稍后重试`);
+        } else {
+            // Only alert on manual refresh
+            const isManualRefresh = event && event.isTrusted;
+            if (isManualRefresh) {
+                alert(`⚠️ 数据分析刷新失败\n\n${error.message}\n\n正在显示缓存数据`);
+            }
         }
     } finally {
         // Hide loading indicator
@@ -1880,15 +1935,18 @@ function drawDemoSentimentChart() {
 // ===== History Management =====
 async function loadHistoryData(filter = 'all') {
     try {
-        const response = await fetch(`/api/history?filter=${filter}`);
+        const response = await fetchWithTimeout(`/api/history?filter=${filter}`);
         const result = await response.json();
         
         if (result.success && result.data) {
             updateHistoryTable(result.data);
             updateHistoryStats(result.statistics);
+        } else {
+            throw new Error(result.error || '无法加载历史记录');
         }
     } catch (error) {
         console.error('Error loading history:', error);
+        alert(`❌ 历史记录加载失败\n\n${error.message}\n\n请检查网络连接或稍后重试`);
     }
 }
 
@@ -1955,7 +2013,7 @@ async function clearHistory() {
     
     try {
         showLoading();
-        const response = await fetch('/api/history/clear', {
+        const response = await fetchWithTimeout('/api/history/clear', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1965,15 +2023,15 @@ async function clearHistory() {
         const result = await response.json();
         
         if (result.success) {
-            alert(result.message);
+            alert(`✅ 清空成功\n\n${result.message}`);
             // Reload history data
             loadHistoryData('all');
         } else {
-            alert('清空失败: ' + (result.error || '未知错误'));
+            alert(`❌ 清空失败\n\n${result.error || '未知错误'}`);
         }
     } catch (error) {
         console.error('Error clearing history:', error);
-        alert('清空历史记录时发生错误');
+        alert(`❌ 清空历史记录失败\n\n${error.message}\n\n请检查网络连接或稍后重试`);
     } finally {
         hideLoading();
     }
