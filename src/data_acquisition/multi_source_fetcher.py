@@ -59,8 +59,8 @@ class MultiSourceDataFetcher:
             import yfinance as yf
             logger.info("✓ Yahoo Finance initialized")
             return yf
-        except ImportError:
-            logger.warning("✗ Yahoo Finance not available")
+        except (ImportError, TypeError) as e:
+            logger.warning(f"✗ Yahoo Finance not available: {str(e)}")
             return None
     
     def _init_eastmoney(self):

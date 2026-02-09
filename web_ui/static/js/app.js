@@ -482,6 +482,7 @@ async function runPrediction() {
                 priceHistory: result.priceHistory || generatePriceHistory(result.currentPrice)
             };
             
+            hideLoading();
             displayPredictionResults(data);
             
             // Also load multi-timeframe predictions

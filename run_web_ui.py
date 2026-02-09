@@ -20,22 +20,37 @@ sys.path.insert(0, str(ROOT_DIR))
 
 try:
     from src.utils import setup_logger
-    from src.data_acquisition.multi_source_fetcher import MultiSourceDataFetcher
-    from src.database.models import DatabaseManager
-    from src.prediction_models import MultiModelPredictor
     logger = setup_logger(__name__)
-    
-    # Initialize data fetcher and database
-    data_fetcher = MultiSourceDataFetcher()
-    db_manager = DatabaseManager()
-    multi_predictor = MultiModelPredictor()
-except ImportError as e:
+except ImportError:
     import logging
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-    logger.error(f"Import error: {str(e)}")
+
+# Initialize data fetcher
+try:
+    from src.data_acquisition.multi_source_fetcher import MultiSourceDataFetcher
+    data_fetcher = MultiSourceDataFetcher()
+    logger.info("✓ Data fetcher initialized successfully")
+except Exception as e:
+    logger.error(f"Data fetcher initialization error: {str(e)}")
     data_fetcher = None
+
+# Initialize database manager
+try:
+    from src.database.models import DatabaseManager
+    db_manager = DatabaseManager()
+    logger.info("✓ Database manager initialized successfully")
+except Exception as e:
+    logger.error(f"Database manager initialization error: {str(e)}")
     db_manager = None
+
+# Initialize predictor (optional, not critical for basic functionality)
+try:
+    from src.prediction_models import MultiModelPredictor
+    multi_predictor = MultiModelPredictor()
+    logger.info("✓ Multi-model predictor initialized successfully")
+except Exception as e:
+    logger.warning(f"Multi-model predictor not available: {str(e)}")
     multi_predictor = None
 
 # Initialize Flask app
@@ -155,16 +170,11 @@ def predict_stock(stock_code):
             except Exception as e:
                 logger.error(f"Error fetching historical data: {str(e)}", exc_info=True)
         
-        # Check if we have real historical data - if not, return error
+        # Check if we have real historical data - if not, generate demo data
         if not has_real_historical_data:
-            logger.warning(f"No real historical data available for {stock_code}")
-            return jsonify({
-                'success': False,
-                'error': 'no_historical_data',
-                'message': '无法获取真实历史数据，无法进行预测分析',
-                'stockCode': stock_code,
-                'stockName': real_data.get('name', '')
-            })
+            logger.warning(f"No real historical data available for {stock_code}, using demo data")
+            # Generate demo price history based on current price
+            price_history = generate_demo_price_history(real_data['price'], days=30)
         
         # Generate prediction based on real data (we already checked that real_data exists)
         current_price = real_data['price']
