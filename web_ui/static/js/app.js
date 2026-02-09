@@ -490,16 +490,12 @@ async function runPrediction() {
             // Show error message instead of displaying predictions
             hideLoading();
             displayErrorMessage(result.message || '预测失败，请稍后重试', result.error);
-            // Alert user about the error
-            alert(`❌ 预测失败\n\n${result.message || '无法获取股票数据'}\n\n请检查：\n• 股票代码是否正确\n• 是否在交易时间内\n• 网络连接是否正常`);
         }
     } catch (error) {
         console.error('Prediction error:', error);
         hideLoading();
         const errorMsg = error.message || '网络错误，无法连接到服务器';
         displayErrorMessage(errorMsg, 'network_error');
-        // Alert user about the error
-        alert(`❌ 网络错误\n\n${errorMsg}\n\n请检查：\n• 网络连接是否正常\n• 服务器是否可访问\n• 稍后重试`);
     }
 }
 
@@ -1049,12 +1045,6 @@ async function loadWatchlist() {
         if (!cachedData) {
             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">加载失败</td></tr>';
             alert(`❌ 观测池加载失败\n\n${error.message}\n\n请检查：\n• 网络连接是否正常\n• 稍后重试`);
-        } else {
-            // Only alert if user actively tries to refresh (not on first load)
-            const isManualRefresh = event && event.isTrusted;
-            if (isManualRefresh) {
-                alert(`⚠️ 观测池刷新失败\n\n${error.message}\n\n正在显示缓存数据`);
-            }
         }
     }
 }
@@ -1204,12 +1194,6 @@ async function loadAnalyticsData() {
             drawDemoSectorChart();
             drawDemoSentimentChart();
             alert(`❌ 数据分析加载失败\n\n${error.message}\n\n正在显示演示数据\n\n请检查网络连接或稍后重试`);
-        } else {
-            // Only alert on manual refresh
-            const isManualRefresh = event && event.isTrusted;
-            if (isManualRefresh) {
-                alert(`⚠️ 数据分析刷新失败\n\n${error.message}\n\n正在显示缓存数据`);
-            }
         }
     } finally {
         // Hide loading indicator
