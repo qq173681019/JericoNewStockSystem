@@ -183,13 +183,35 @@ function displayPredictionResults(data) {
     document.getElementById('boll').textContent = data.technicalIndicators.boll;
     
     // Apply color classes based on prediction
+    // Note: Following Chinese stock market convention where red=up/rise, green=down/fall
+    // CSS variables: --success-color (red #ef4444), --danger-color (green #10b981)
     const shortTermElement = document.getElementById('shortTermPrediction');
+    const mediumTermElement = document.getElementById('mediumTermPrediction');
     const adviceElement = document.getElementById('tradingAdvice');
     
     if (data.shortTermPrediction.startsWith('+')) {
         shortTermElement.style.color = 'var(--success-color)';
     } else {
         shortTermElement.style.color = 'var(--danger-color)';
+    }
+    
+    // Apply color to medium-term prediction based on comparison with current price
+    // Note: Following Chinese stock market convention (red=up, green=down)
+    // --success-color is red (#ef4444) and --danger-color is green (#10b981)
+    if (data.mediumTermPrediction && data.currentPrice) {
+        // Extract price from format "¥XX.XX"
+        const mediumPriceMatch = data.mediumTermPrediction.match(/[\d.]+/);
+        if (mediumPriceMatch) {
+            const mediumPrice = parseFloat(mediumPriceMatch[0]);
+            const currentPrice = parseFloat(data.currentPrice);
+            if (mediumPrice > currentPrice) {
+                mediumTermElement.style.color = 'var(--success-color)'; // Red for higher price (upward)
+            } else if (mediumPrice < currentPrice) {
+                mediumTermElement.style.color = 'var(--danger-color)'; // Green for lower price (downward)
+            } else {
+                mediumTermElement.style.color = 'var(--text-primary)'; // Default for equal
+            }
+        }
     }
     
     if (data.tradingAdvice === '买入') {
@@ -482,6 +504,31 @@ function updateTimeframeCard(timeframe, data) {
     const priceElement = document.getElementById(`price${timeframe}`);
     if (priceElement && data.prediction && data.prediction.targetPrice) {
         priceElement.textContent = `¥${data.prediction.targetPrice}`;
+        
+        // Apply color based on expected change direction
+        if (data.prediction.expectedChange !== undefined) {
+            const change = data.prediction.expectedChange;
+            if (isFallback) {
+                // Even for fallback data, show color but with reduced opacity
+                if (change > 0) {
+                    priceElement.className = 'value-number positive';
+                } else if (change < 0) {
+                    priceElement.className = 'value-number negative';
+                } else {
+                    priceElement.className = 'value-number neutral';
+                }
+                priceElement.style.opacity = '0.7';
+            } else if (change > 0) {
+                priceElement.className = 'value-number positive';
+                priceElement.style.opacity = '1';
+            } else if (change < 0) {
+                priceElement.className = 'value-number negative';
+                priceElement.style.opacity = '1';
+            } else {
+                priceElement.className = 'value-number neutral';
+                priceElement.style.opacity = '1';
+            }
+        }
     }
     
     // Update change
@@ -493,8 +540,15 @@ function updateTimeframeCard(timeframe, data) {
         
         // Apply color based on direction - muted if fallback
         if (isFallback) {
-            changeElement.className = 'change-number neutral';
-            changeElement.style.opacity = '0.5';
+            // Even for fallback data, show color but with reduced opacity
+            if (change > 0) {
+                changeElement.className = 'change-number positive';
+            } else if (change < 0) {
+                changeElement.className = 'change-number negative';
+            } else {
+                changeElement.className = 'change-number neutral';
+            }
+            changeElement.style.opacity = '0.7';
         } else if (change > 0) {
             changeElement.className = 'change-number positive';
             changeElement.style.opacity = '1';
