@@ -96,9 +96,20 @@ def predict_stock(stock_code):
         if data_fetcher:
             real_data = data_fetcher.fetch_stock_realtime(stock_code)
         
+        # Check if we have real data - if not, return error immediately
+        if not real_data:
+            logger.warning(f"No real-time data available for {stock_code}")
+            return jsonify({
+                'success': False,
+                'error': 'no_real_data',
+                'message': '无法获取真实股票数据，请检查股票代码是否正确或稍后重试',
+                'stockCode': stock_code
+            })
+        
         # Fetch historical data for chart
         historical_data = None
         price_history = {'labels': [], 'data': []}
+        has_real_historical_data = False
         
         if data_fetcher:
             try:
@@ -124,6 +135,7 @@ def predict_stock(stock_code):
                         price_history['data'] = [
                             float(p) for p in historical_df['收盘']
                         ]
+                        has_real_historical_data = True
                         logger.info(f"✓ Processed AKShare format: {len(price_history['data'])} price points")
                     elif 'Close' in historical_df.columns:
                         # Yahoo Finance format
@@ -134,6 +146,7 @@ def predict_stock(stock_code):
                         price_history['data'] = [
                             float(p) for p in historical_df['Close']
                         ]
+                        has_real_historical_data = True
                         logger.info(f"✓ Processed Yahoo format: {len(price_history['data'])} price points")
                     else:
                         logger.warning(f"Unknown data format. Available columns: {historical_df.columns.tolist()}")
@@ -142,77 +155,44 @@ def predict_stock(stock_code):
             except Exception as e:
                 logger.error(f"Error fetching historical data: {str(e)}", exc_info=True)
         
-        # If no price history, generate demo data for visualization
-        if not price_history['data']:
-            logger.info(f"Generating demo price history for {stock_code}")
-            base_price = 10 + (hash(stock_code) % 50)
-            price_history = generate_demo_price_history(base_price)
+        # Check if we have real historical data - if not, return error
+        if not has_real_historical_data:
+            logger.warning(f"No real historical data available for {stock_code}")
+            return jsonify({
+                'success': False,
+                'error': 'no_historical_data',
+                'message': '无法获取真实历史数据，无法进行预测分析',
+                'stockCode': stock_code,
+                'stockName': real_data.get('name', '')
+            })
         
-        # Generate prediction based on real data
-        if real_data and price_history['data']:
-            current_price = real_data['price']
-            stock_name = real_data.get('name', '')
-            
-            # Calculate simple prediction based on recent trend
-            recent_prices = price_history['data'][-5:]  # Last 5 days
-            price_trend = (recent_prices[-1] - recent_prices[0]) / recent_prices[0] * 100
-            
-            # Short-term prediction (simple momentum)
-            short_term_change = price_trend * 0.5  # Conservative estimate
-            
-            # Medium-term prediction (3-month target)
-            medium_term_price = current_price * (1 + price_trend / 100 * 1.5)
-            
-            # Trading advice based on trend
-            if short_term_change > 2:
-                advice = '买入'
-                direction = 'up'
-            elif short_term_change < -2:
-                advice = '卖出'
-                direction = 'down'
-            else:
-                advice = '持有'
-                direction = 'neutral'
-            
-            # Confidence based on data quality
-            confidence = 0.75 if len(recent_prices) >= 5 else 0.60
-            accuracy = 78.5 + (confidence - 0.75) * 20
-            
-        elif price_history['data']:  # Only have demo data, not real data
-            base_price = price_history['data'][0]
-            current_price = price_history['data'][-1]
-            stock_name = ''
-            
-            # Calculate prediction based on demo data
-            recent_prices = price_history['data'][-5:]
-            price_trend = (recent_prices[-1] - recent_prices[0]) / recent_prices[0] * 100
-            short_term_change = price_trend * 0.5
-            medium_term_price = current_price * (1 + price_trend / 100 * 1.5)
-            
-            if short_term_change > 2:
-                advice = '买入'
-                direction = 'up'
-            elif short_term_change < -2:
-                advice = '卖出'
-                direction = 'down'
-            else:
-                advice = '持有'
-                direction = 'neutral'
-            
-            confidence = 0.60
-            accuracy = 75.0
-            
+        # Generate prediction based on real data (we already checked that real_data exists)
+        current_price = real_data['price']
+        stock_name = real_data.get('name', '')
+        
+        # Calculate simple prediction based on recent trend
+        recent_prices = price_history['data'][-5:]  # Last 5 days
+        price_trend = (recent_prices[-1] - recent_prices[0]) / recent_prices[0] * 100
+        
+        # Short-term prediction (simple momentum)
+        short_term_change = price_trend * 0.5  # Conservative estimate
+        
+        # Medium-term prediction (3-month target)
+        medium_term_price = current_price * (1 + price_trend / 100 * 1.5)
+        
+        # Trading advice based on trend
+        if short_term_change > 2:
+            advice = '买入'
+            direction = 'up'
+        elif short_term_change < -2:
+            advice = '卖出'
+            direction = 'down'
         else:
-            # Fallback to mock data if real data unavailable
-            logger.warning(f"Using mock data for {stock_code}")
-            current_price = 10 + (hash(stock_code) % 50)
-            stock_name = ''
-            short_term_change = (hash(stock_code) % 10 - 5) * 0.6
-            medium_term_price = current_price * 1.05
             advice = '持有'
             direction = 'neutral'
-            confidence = 0.65
-            accuracy = 75.0
+        
+        # Confidence based on data quality
+        confidence = 0.75 if len(recent_prices) >= 5 else 0.60
         
         # Prepare result
         result = {
@@ -231,8 +211,7 @@ def predict_stock(stock_code):
                     'timeframe': '3个月',
                     'confidence': round(confidence * 0.9, 2)
                 },
-                'advice': advice,
-                'accuracy': round(accuracy, 1)
+                'advice': advice
             },
             'technicalIndicators': {
                 'RSI': round(30 + (hash(stock_code + 'rsi') % 40), 1),
@@ -314,6 +293,17 @@ def predict_stock_multi_timeframe(stock_code):
                 current_price = real_data['price']
                 stock_name = real_data.get('name', '')
         
+        # Check if we have real-time data
+        if not real_data:
+            logger.warning(f"No real-time data available for {stock_code}")
+            return jsonify({
+                'success': False,
+                'error': 'no_real_data',
+                'message': '无法获取真实股票数据，请检查股票代码是否正确或稍后重试',
+                'stockCode': stock_code,
+                'timeframe': timeframe
+            })
+        
         # Fetch historical data for prediction
         historical_df = None
         days_to_fetch = 30  # Use 30 days for both timeframes
@@ -354,10 +344,22 @@ def predict_stock_multi_timeframe(stock_code):
                 logger.error(f"Error fetching historical data: {str(e)}", exc_info=True)
                 historical_df = None
         
+        # Check if we have historical data
+        if historical_df is None or historical_df.empty:
+            logger.warning(f"No historical data available for {stock_code}")
+            return jsonify({
+                'success': False,
+                'error': 'no_historical_data',
+                'message': '无法获取真实历史数据，无法进行预测分析',
+                'stockCode': stock_code,
+                'stockName': stock_name,
+                'timeframe': timeframe
+            })
+        
         # Generate predictions using multi-model predictor
         prediction_result = None
         
-        if historical_df is not None and not historical_df.empty and multi_predictor:
+        if multi_predictor:
             try:
                 logger.info(f"Running multi-model prediction with {len(historical_df)} data points")
                 prediction_result = multi_predictor.predict_multi_timeframe(
@@ -372,55 +374,41 @@ def predict_stock_multi_timeframe(stock_code):
                 logger.error(f"Multi-model prediction failed: {str(e)}", exc_info=True)
                 prediction_result = None
         
-        # Fallback if prediction failed or no data
+        # Check if prediction succeeded
         if prediction_result is None or 'error' in prediction_result:
-            # Log warning about using fallback data
-            logger.warning(f"Using fallback prediction for {stock_code} - real data unavailable")
-            
-            if current_price is None:
-                # Use a demo price based on stock code hash for consistency
-                current_price = 10 + (hash(stock_code) % 50)
-            
-            # Generate simple fallback prediction with minimal change
-            if timeframe == '30min':
-                pred_points = 6
-                timeframe_label = '30分钟'
-            else:  # 1day
-                pred_points = 1
-                timeframe_label = '1天'
-            
-            # Simple linear prediction with small increments
-            # IMPORTANT: This is DEMO data only - real predictions use multi-model ensemble
-            predicted_prices = [current_price * (1 + 0.01 * i) for i in range(pred_points)]
-            price_changes = [0.01 * (i + 1) * 100 for i in range(pred_points)]  # Progressive changes
-            confidence = 0.30  # Very low confidence for fallback data
-            advice = '无法预测（数据不足）'
-            direction = 'neutral'
-        else:
-            # Extract prediction results
-            ensemble_pred = prediction_result.get('ensemble', {})
-            predicted_prices = ensemble_pred.get('prices', [])
-            price_changes = prediction_result.get('price_change_pcts', [])
-            confidence = prediction_result.get('confidence', 0.70)
-            trading_signal = prediction_result.get('trading_signal', {})
-            advice = trading_signal.get('recommendation', '持有')
-            
-            # Determine direction from price changes
-            if price_changes and price_changes[-1] > 2:
-                direction = 'up'
-            elif price_changes and price_changes[-1] < -2:
-                direction = 'down'
-            else:
-                direction = 'neutral'
-            
-            # Get timeframe label
-            if timeframe == '30min':
-                timeframe_label = '30分钟'
-            else:
-                timeframe_label = '1天'
+            logger.warning(f"Prediction failed for {stock_code}")
+            return jsonify({
+                'success': False,
+                'error': 'prediction_failed',
+                'message': '预测模型运行失败，请稍后重试',
+                'stockCode': stock_code,
+                'stockName': stock_name,
+                'timeframe': timeframe
+            })
         
-        # Prepare result
-        is_fallback = prediction_result is None or 'error' in prediction_result
+        # Extract prediction results (only reached if we have real data and successful prediction)
+        ensemble_pred = prediction_result.get('ensemble', {})
+        predicted_prices = ensemble_pred.get('prices', [])
+        price_changes = prediction_result.get('price_change_pcts', [])
+        confidence = prediction_result.get('confidence', 0.70)
+        trading_signal = prediction_result.get('trading_signal', {})
+        advice = trading_signal.get('recommendation', '持有')
+        
+        # Determine direction from price changes
+        if price_changes and price_changes[-1] > 2:
+            direction = 'up'
+        elif price_changes and price_changes[-1] < -2:
+            direction = 'down'
+        else:
+            direction = 'neutral'
+        
+        # Get timeframe label
+        if timeframe == '30min':
+            timeframe_label = '30分钟'
+        else:
+            timeframe_label = '1天'
+        
+        # Prepare result (only for real data now, no fallback)
         result = {
             'success': True,
             'stockCode': stock_code,
@@ -428,7 +416,6 @@ def predict_stock_multi_timeframe(stock_code):
             'currentPrice': round(current_price, 2),
             'timeframe': timeframe,
             'timeframeLabel': timeframe_label,
-            'isFallbackData': is_fallback,  # Flag to indicate if using demo data
             'prediction': {
                 'prices': [round(p, 2) for p in predicted_prices],
                 'changes': [round(c, 2) for c in price_changes],
@@ -438,7 +425,7 @@ def predict_stock_multi_timeframe(stock_code):
                 'targetPrice': round(predicted_prices[-1], 2) if predicted_prices else current_price,
                 'expectedChange': round(price_changes[-1], 2) if price_changes else 0
             },
-            'message': '⚠️ 无法获取真实数据，显示模拟预测' if is_fallback else 'Multi-timeframe prediction completed successfully'
+            'message': 'Multi-timeframe prediction completed successfully'
         }
         
         # Add technical indicators if available

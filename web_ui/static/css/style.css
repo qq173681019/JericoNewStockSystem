@@ -1802,3 +1802,98 @@ tbody tr:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* Error Message Styles */
+.error-message-container {
+    margin: 2rem 0;
+    padding: 0;
+}
+
+.error-card {
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+    border: 2px solid #fca5a5;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.error-title {
+    color: #dc2626;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.error-message {
+    color: #991b1b;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.error-suggestions {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: left;
+    margin-top: 1.5rem;
+}
+
+.error-suggestions p {
+    color: #374151;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.error-suggestions ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0.5rem 0 0 0;
+}
+
+.error-suggestions li {
+    color: #6b7280;
+    padding: 0.5rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.error-suggestions li:before {
+    content: "•";
+    color: #dc2626;
+    font-weight: bold;
+    position: absolute;
+    left: 0;
+}
+
+/* Dark mode adjustments for error messages */
+body.dark-mode .error-card {
+    background: linear-gradient(135deg, #2d1b1b 0%, #3d2222 100%);
+    border-color: #7f1d1d;
+}
+
+body.dark-mode .error-title {
+    color: #f87171;
+}
+
+body.dark-mode .error-message {
+    color: #fca5a5;
+}
+
+body.dark-mode .error-suggestions {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .error-suggestions p {
+    color: #d1d5db;
+}
+
+body.dark-mode .error-suggestions li {
+    color: #9ca3af;
+}

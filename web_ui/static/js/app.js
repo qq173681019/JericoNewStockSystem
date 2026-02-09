@@ -132,7 +132,6 @@ function generateMockPredictionData(stockCode) {
         shortTermPrediction: shortTermChange > 0 ? `+${shortTermChange.toFixed(2)}%` : `${shortTermChange.toFixed(2)}%`,
         mediumTermPrediction: `¥${mediumTermPrice.toFixed(2)}`,
         tradingAdvice: shortTermChange > 2 ? '买入' : shortTermChange < -2 ? '卖出' : '持有',
-        accuracy: `${(75 + Math.random() * 15).toFixed(1)}%`,
         technicalIndicators: {
             rsi: (30 + Math.random() * 40).toFixed(1),
             macd: (Math.random() - 0.5).toFixed(3),
@@ -172,7 +171,6 @@ function displayPredictionResults(data) {
     document.getElementById('shortTermPrediction').textContent = data.shortTermPrediction;
     document.getElementById('mediumTermPrediction').textContent = data.mediumTermPrediction;
     document.getElementById('tradingAdvice').textContent = data.tradingAdvice;
-    document.getElementById('accuracy').textContent = data.accuracy;
     
     // Update technical indicators
     document.getElementById('rsi').textContent = data.technicalIndicators.rsi;
@@ -232,6 +230,58 @@ function displayPredictionResults(data) {
     predictionResults.style.display = 'block';
 }
 
+function displayErrorMessage(message, errorType) {
+    // Hide the prediction results section
+    predictionResults.style.display = 'none';
+    
+    // Create or update error message display
+    let errorDiv = document.getElementById('predictionError');
+    if (!errorDiv) {
+        errorDiv = document.createElement('div');
+        errorDiv.id = 'predictionError';
+        errorDiv.className = 'error-message-container';
+        
+        // Insert after the prediction form
+        const form = document.querySelector('.prediction-form');
+        if (form && form.parentNode) {
+            form.parentNode.insertBefore(errorDiv, form.nextSibling);
+        }
+    }
+    
+    // Set error message content with icon and styling
+    let errorIcon = '⚠️';
+    let errorTitle = '无法获取数据';
+    
+    if (errorType === 'no_real_data' || errorType === 'no_historical_data') {
+        errorIcon = '📊';
+        errorTitle = '无法获取真实数据';
+    } else if (errorType === 'network_error') {
+        errorIcon = '🌐';
+        errorTitle = '网络错误';
+    } else if (errorType === 'prediction_failed') {
+        errorIcon = '⚠️';
+        errorTitle = '预测失败';
+    }
+    
+    errorDiv.innerHTML = `
+        <div class="error-card">
+            <div class="error-icon">${errorIcon}</div>
+            <h3 class="error-title">${errorTitle}</h3>
+            <p class="error-message">${message}</p>
+            <div class="error-suggestions">
+                <p><strong>建议：</strong></p>
+                <ul>
+                    <li>检查股票代码是否正确（如：000001、600036）</li>
+                    <li>确认股票是否在交易时间内</li>
+                    <li>稍后再试</li>
+                </ul>
+            </div>
+        </div>
+    `;
+    
+    errorDiv.style.display = 'block';
+}
+
 function savePredictionToHistory(data) {
     try {
         // Get existing history from localStorage
@@ -246,8 +296,7 @@ function savePredictionToHistory(data) {
             currentPrice: data.currentPrice,
             shortTermPrediction: data.shortTermPrediction,
             mediumTermPrediction: data.mediumTermPrediction,
-            tradingAdvice: data.tradingAdvice,
-            accuracy: data.accuracy
+            tradingAdvice: data.tradingAdvice
         };
         
         // Add to beginning of array (most recent first)
@@ -393,7 +442,6 @@ async function runPrediction() {
                     : `${result.prediction.shortTerm.change}%`,
                 mediumTermPrediction: `¥${result.prediction.mediumTerm.targetPrice}`,
                 tradingAdvice: result.prediction.advice,
-                accuracy: `${result.prediction.accuracy}%`,
                 technicalIndicators: {
                     rsi: result.technicalIndicators.RSI,
                     macd: result.technicalIndicators.MACD,
@@ -410,17 +458,14 @@ async function runPrediction() {
             // Also load multi-timeframe predictions
             loadMultiTimeframePredictions(stockCode);
         } else {
-            alert(result.message || '预测失败，请稍后重试');
+            // Show error message instead of displaying predictions
+            hideLoading();
+            displayErrorMessage(result.message || '预测失败，请稍后重试', result.error);
         }
     } catch (error) {
         console.error('Prediction error:', error);
-        
-        // Fallback to mock data if API fails
-        console.log('Using fallback mock data');
-        const data = generateMockPredictionData(stockCode);
-        displayPredictionResults(data);
-    } finally {
         hideLoading();
+        displayErrorMessage('网络错误，无法连接到服务器', 'network_error');
     }
 }
 
@@ -467,67 +512,58 @@ function setTimeframeLoading(timeframe, isLoading) {
 function setTimeframeError(timeframe, message) {
     const statusElement = document.getElementById(`status${timeframe}`);
     if (statusElement) {
-        statusElement.textContent = '失败';
+        statusElement.textContent = '❌';
         statusElement.className = 'timeframe-status error';
+        statusElement.title = message || '无法获取数据';
     }
     
-    // Set placeholder values
+    // Set error message instead of placeholder values
     const priceElement = document.getElementById(`price${timeframe}`);
     const changeElement = document.getElementById(`change${timeframe}`);
     const confidenceElement = document.getElementById(`confidence${timeframe}`);
     
-    if (priceElement) priceElement.textContent = '--';
-    if (changeElement) changeElement.textContent = '--';
-    if (confidenceElement) confidenceElement.textContent = '--';
+    if (priceElement) {
+        priceElement.textContent = '数据不可用';
+        priceElement.style.fontSize = '14px';
+        priceElement.style.color = 'var(--text-secondary)';
+    }
+    if (changeElement) {
+        changeElement.textContent = '--';
+        changeElement.style.color = 'var(--text-secondary)';
+    }
+    if (confidenceElement) {
+        confidenceElement.textContent = '--';
+        confidenceElement.style.color = 'var(--text-secondary)';
+    }
 }
 
 // Update timeframe card with prediction data
 function updateTimeframeCard(timeframe, data) {
-    // Check if this is fallback/demo data
-    const isFallback = data.isFallbackData === true;
-    
-    // Update status
+    // Update status (no more fallback, only success)
     const statusElement = document.getElementById(`status${timeframe}`);
     if (statusElement) {
-        if (isFallback) {
-            statusElement.textContent = '⚠️';
-            statusElement.className = 'timeframe-status warning';
-            statusElement.title = '数据不足，显示模拟预测';
-        } else {
-            statusElement.textContent = '✓';
-            statusElement.className = 'timeframe-status success';
-            statusElement.title = '';
-        }
+        statusElement.textContent = '✓';
+        statusElement.className = 'timeframe-status success';
+        statusElement.title = '';
     }
     
     // Update price
     const priceElement = document.getElementById(`price${timeframe}`);
     if (priceElement && data.prediction && data.prediction.targetPrice) {
         priceElement.textContent = `¥${data.prediction.targetPrice}`;
+        priceElement.style.fontSize = '';  // Reset to default
         
         // Apply color based on expected change direction
         if (data.prediction.expectedChange !== undefined) {
             const change = data.prediction.expectedChange;
-            if (isFallback) {
-                // Even for fallback data, show color but with reduced opacity
-                if (change > 0) {
-                    priceElement.className = 'value-number positive';
-                } else if (change < 0) {
-                    priceElement.className = 'value-number negative';
-                } else {
-                    priceElement.className = 'value-number neutral';
-                }
-                priceElement.style.opacity = '0.7';
-            } else if (change > 0) {
+            if (change > 0) {
                 priceElement.className = 'value-number positive';
-                priceElement.style.opacity = '1';
             } else if (change < 0) {
                 priceElement.className = 'value-number negative';
-                priceElement.style.opacity = '1';
             } else {
                 priceElement.className = 'value-number neutral';
-                priceElement.style.opacity = '1';
             }
+            priceElement.style.opacity = '1';
         }
     }
     
@@ -538,27 +574,15 @@ function updateTimeframeCard(timeframe, data) {
         const changeText = change >= 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
         changeElement.textContent = changeText;
         
-        // Apply color based on direction - muted if fallback
-        if (isFallback) {
-            // Even for fallback data, show color but with reduced opacity
-            if (change > 0) {
-                changeElement.className = 'change-number positive';
-            } else if (change < 0) {
-                changeElement.className = 'change-number negative';
-            } else {
-                changeElement.className = 'change-number neutral';
-            }
-            changeElement.style.opacity = '0.7';
-        } else if (change > 0) {
+        // Apply color based on direction
+        if (change > 0) {
             changeElement.className = 'change-number positive';
-            changeElement.style.opacity = '1';
         } else if (change < 0) {
             changeElement.className = 'change-number negative';
-            changeElement.style.opacity = '1';
         } else {
             changeElement.className = 'change-number neutral';
-            changeElement.style.opacity = '1';
         }
+        changeElement.style.opacity = '1';
     }
     
     // Update confidence
@@ -1910,12 +1934,11 @@ function updateHistoryStats(statistics) {
     const statsContainer = document.querySelector('#historyView .history-stats');
     if (!statsContainer) return;
     
-    // Update stat cards
+    // Update stat cards (only 2 cards now: total predictions and accurate predictions)
     const statCards = statsContainer.querySelectorAll('.stat-card h3');
-    if (statCards.length >= 3) {
+    if (statCards.length >= 2) {
         statCards[0].textContent = statistics.total || 0;
-        statCards[1].textContent = `${statistics.accuracy_rate || 0}%`;
-        statCards[2].textContent = statistics.accurate || 0;
+        statCards[1].textContent = statistics.accurate || 0;
     }
 }
 
