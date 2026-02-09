@@ -1906,7 +1906,7 @@ function updateHistoryStats(statistics) {
     const statsContainer = document.querySelector('#historyView .history-stats');
     if (!statsContainer) return;
     
-    // Update stat cards (only 2 cards now: total and accurate)
+    // Update stat cards (only 2 cards now: total predictions and accurate predictions)
     const statCards = statsContainer.querySelectorAll('.stat-card h3');
     if (statCards.length >= 2) {
         statCards[0].textContent = statistics.total || 0;
