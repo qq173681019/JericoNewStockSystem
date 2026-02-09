@@ -17,11 +17,8 @@ RUN apt-get update && apt-get install -y \
 # Copy requirements first for better caching
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Gunicorn for production server
-RUN pip install --no-cache-dir gunicorn
+# Install Python dependencies including Gunicorn (combined for fewer layers)
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copy application code
 COPY . .
@@ -36,10 +33,10 @@ ENV RAILWAY_ENVIRONMENT=production
 # Expose port (Railway will set PORT via environment variable)
 EXPOSE 8080
 
-# Health check - uses curl for reliable PORT variable expansion
+# Health check - uses shell form for reliable PORT variable expansion
 # Railway handles network security; binding to 0.0.0.0 is standard for containers
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8080}/ || exit 1
+    CMD /bin/sh -c 'curl -f http://127.0.0.1:${PORT:-8080}/ || exit 1'
 
 # Start command using Gunicorn
 # - Single worker for Railway's resource limits
