@@ -75,6 +75,7 @@ class DatabaseManager:
         self.Session = sessionmaker(bind=self.engine)
         self.create_tables()
         self.migrate_database()
+        self.auto_restore_if_empty()
         logger.info(f"Database initialized: {database_url}")
     
     def create_tables(self):
@@ -98,6 +99,54 @@ class DatabaseManager:
                     logger.info("Successfully added target_days column")
         except Exception as e:
             logger.warning(f"Migration check failed (this is okay for new databases): {e}")
+    
+    def auto_restore_if_empty(self):
+        """
+        Automatically restore watchlist from the latest backup if database is empty.
+        This ensures data persistence across version updates.
+        """
+        try:
+            # Check if watchlist is empty
+            session = self.get_session()
+            try:
+                watchlist_count = session.query(Watchlist).count()
+                
+                if watchlist_count > 0:
+                    logger.info(f"Watchlist has {watchlist_count} items, no restore needed")
+                    return
+                
+                # Watchlist is empty, try to restore from latest backup
+                logger.info("Watchlist is empty, checking for backups to restore...")
+                
+                from config.settings import DATA_DIR
+                backup_dir = DATA_DIR / "backups"
+                
+                if not backup_dir.exists():
+                    logger.info("No backup directory found, this is a fresh installation")
+                    return
+                
+                # Find the most recent backup file
+                backup_files = sorted(backup_dir.glob("*.json"), 
+                                    key=lambda p: p.stat().st_mtime, 
+                                    reverse=True)
+                
+                if not backup_files:
+                    logger.info("No backup files found")
+                    return
+                
+                # Restore from the most recent backup
+                latest_backup = backup_files[0]
+                logger.info(f"Found backup: {latest_backup.name}, attempting to restore...")
+                
+                restored_count = self.import_watchlist_from_json(str(latest_backup), merge=True)
+                logger.info(f"✅ Successfully restored {restored_count} items from {latest_backup.name}")
+                
+            finally:
+                session.close()
+                
+        except Exception as e:
+            logger.warning(f"Auto-restore check failed (this is okay): {e}")
+
     
     def get_session(self):
         """Get a new database session"""
