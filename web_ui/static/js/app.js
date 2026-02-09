@@ -505,8 +505,15 @@ function updateTimeframeCard(timeframe, data) {
         if (data.prediction.expectedChange !== undefined) {
             const change = data.prediction.expectedChange;
             if (isFallback) {
-                priceElement.className = 'value-number neutral';
-                priceElement.style.opacity = '0.5';
+                // Even for fallback data, show color but with reduced opacity
+                if (change > 0) {
+                    priceElement.className = 'value-number positive';
+                } else if (change < 0) {
+                    priceElement.className = 'value-number negative';
+                } else {
+                    priceElement.className = 'value-number neutral';
+                }
+                priceElement.style.opacity = '0.7';
             } else if (change > 0) {
                 priceElement.className = 'value-number positive';
                 priceElement.style.opacity = '1';
@@ -529,8 +536,15 @@ function updateTimeframeCard(timeframe, data) {
         
         // Apply color based on direction - muted if fallback
         if (isFallback) {
-            changeElement.className = 'change-number neutral';
-            changeElement.style.opacity = '0.5';
+            // Even for fallback data, show color but with reduced opacity
+            if (change > 0) {
+                changeElement.className = 'change-number positive';
+            } else if (change < 0) {
+                changeElement.className = 'change-number negative';
+            } else {
+                changeElement.className = 'change-number neutral';
+            }
+            changeElement.style.opacity = '0.7';
         } else if (change > 0) {
             changeElement.className = 'change-number positive';
             changeElement.style.opacity = '1';
