@@ -176,7 +176,6 @@ def predict_stock(stock_code):
             
             # Confidence based on data quality
             confidence = 0.75 if len(recent_prices) >= 5 else 0.60
-            accuracy = 78.5 + (confidence - 0.75) * 20
             
         elif price_history['data']:  # Only have demo data, not real data
             base_price = price_history['data'][0]
@@ -200,7 +199,6 @@ def predict_stock(stock_code):
                 direction = 'neutral'
             
             confidence = 0.60
-            accuracy = 75.0
             
         else:
             # Fallback to mock data if real data unavailable
@@ -212,7 +210,6 @@ def predict_stock(stock_code):
             advice = '持有'
             direction = 'neutral'
             confidence = 0.65
-            accuracy = 75.0
         
         # Prepare result
         result = {
@@ -231,8 +228,7 @@ def predict_stock(stock_code):
                     'timeframe': '3个月',
                     'confidence': round(confidence * 0.9, 2)
                 },
-                'advice': advice,
-                'accuracy': round(accuracy, 1)
+                'advice': advice
             },
             'technicalIndicators': {
                 'RSI': round(30 + (hash(stock_code + 'rsi') % 40), 1),

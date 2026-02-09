@@ -132,7 +132,6 @@ function generateMockPredictionData(stockCode) {
         shortTermPrediction: shortTermChange > 0 ? `+${shortTermChange.toFixed(2)}%` : `${shortTermChange.toFixed(2)}%`,
         mediumTermPrediction: `¥${mediumTermPrice.toFixed(2)}`,
         tradingAdvice: shortTermChange > 2 ? '买入' : shortTermChange < -2 ? '卖出' : '持有',
-        accuracy: `${(75 + Math.random() * 15).toFixed(1)}%`,
         technicalIndicators: {
             rsi: (30 + Math.random() * 40).toFixed(1),
             macd: (Math.random() - 0.5).toFixed(3),
@@ -172,7 +171,6 @@ function displayPredictionResults(data) {
     document.getElementById('shortTermPrediction').textContent = data.shortTermPrediction;
     document.getElementById('mediumTermPrediction').textContent = data.mediumTermPrediction;
     document.getElementById('tradingAdvice').textContent = data.tradingAdvice;
-    document.getElementById('accuracy').textContent = data.accuracy;
     
     // Update technical indicators
     document.getElementById('rsi').textContent = data.technicalIndicators.rsi;
@@ -246,8 +244,7 @@ function savePredictionToHistory(data) {
             currentPrice: data.currentPrice,
             shortTermPrediction: data.shortTermPrediction,
             mediumTermPrediction: data.mediumTermPrediction,
-            tradingAdvice: data.tradingAdvice,
-            accuracy: data.accuracy
+            tradingAdvice: data.tradingAdvice
         };
         
         // Add to beginning of array (most recent first)
@@ -393,7 +390,6 @@ async function runPrediction() {
                     : `${result.prediction.shortTerm.change}%`,
                 mediumTermPrediction: `¥${result.prediction.mediumTerm.targetPrice}`,
                 tradingAdvice: result.prediction.advice,
-                accuracy: `${result.prediction.accuracy}%`,
                 technicalIndicators: {
                     rsi: result.technicalIndicators.RSI,
                     macd: result.technicalIndicators.MACD,
@@ -1910,12 +1906,11 @@ function updateHistoryStats(statistics) {
     const statsContainer = document.querySelector('#historyView .history-stats');
     if (!statsContainer) return;
     
-    // Update stat cards
+    // Update stat cards (only 2 cards now: total and accurate)
     const statCards = statsContainer.querySelectorAll('.stat-card h3');
-    if (statCards.length >= 3) {
+    if (statCards.length >= 2) {
         statCards[0].textContent = statistics.total || 0;
-        statCards[1].textContent = `${statistics.accuracy_rate || 0}%`;
-        statCards[2].textContent = statistics.accurate || 0;
+        statCards[1].textContent = statistics.accurate || 0;
     }
 }
 
