@@ -510,6 +510,7 @@ async function runPrediction() {
                     ma20: result.technicalIndicators.MA20,
                     boll: result.technicalIndicators.BOLL
                 },
+                indicatorSignals: result.indicatorSignals || {},
                 priceHistory: result.priceHistory || generatePriceHistory(result.currentPrice)
             };
             
