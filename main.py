@@ -19,7 +19,11 @@ logger = setup_logger()
 def main():
     """Main entry point - decides between GUI and Web mode"""
     # Check if running in cloud environment (Railway, Vercel, etc.)
-    is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
+    # Treat environment variable as set if it exists and is not explicitly disabled
+    railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+    vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+    production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+    is_production = railway or vercel or production
     
     if is_production:
         # Production mode: Run Flask Web API

@@ -40,7 +40,10 @@ def test_environment_detection_local():
         env_copy.pop(key, None)
     
     with patch.dict(os.environ, env_copy, clear=True):
-        is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
+        railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+        vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+        production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+        is_production = railway or vercel or production
         assert is_production is False
         print("✓ Local environment detection works")
 
@@ -61,7 +64,10 @@ def test_main_production_mode():
                     import main as main_module
                 
                 # Since we're testing the logic, check that environment detection works
-                is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
+                railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+                vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+                production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+                is_production = railway or vercel or production
                 assert is_production is True
                 print("✓ Production mode environment check works")
 
@@ -85,22 +91,51 @@ def test_port_configuration():
 def test_environment_edge_cases():
     """Test edge cases like empty strings and false values"""
     
-    # Test empty string should still be detected as production
+    # Test empty string should NOT be detected as production (disabled)
     with patch.dict(os.environ, {'RAILWAY_ENVIRONMENT': ''}, clear=True):
-        is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
-        assert is_production is True
-        print("✓ Empty string environment variable correctly detected as production")
+        railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+        vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+        production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+        is_production = railway or vercel or production
+        assert is_production is False
+        print("✓ Empty string environment variable correctly treated as disabled")
     
-    # Test '0' or 'false' should still be detected as production
+    # Test '0' should NOT be detected as production (disabled)
     with patch.dict(os.environ, {'PRODUCTION': '0'}, clear=True):
-        is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
-        assert is_production is True
-        print("✓ '0' environment variable correctly detected as production")
+        railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+        vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+        production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+        is_production = railway or vercel or production
+        assert is_production is False
+        print("✓ '0' environment variable correctly treated as disabled")
     
+    # Test 'false' should NOT be detected as production (disabled)
     with patch.dict(os.environ, {'VERCEL': 'false'}, clear=True):
-        is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
-        assert is_production is True
-        print("✓ 'false' environment variable correctly detected as production")
+        railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+        vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+        production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+        is_production = railway or vercel or production
+        assert is_production is False
+        print("✓ 'false' environment variable correctly treated as disabled")
+    
+    # Test 'no' should NOT be detected as production (disabled)
+    with patch.dict(os.environ, {'PRODUCTION': 'no'}, clear=True):
+        railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+        vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+        production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+        is_production = railway or vercel or production
+        assert is_production is False
+        print("✓ 'no' environment variable correctly treated as disabled")
+    
+    # Test 'true', '1', 'yes' should be detected as production (enabled)
+    for value in ['true', 'True', '1', 'yes', 'YES', 'production', 'enabled']:
+        with patch.dict(os.environ, {'PRODUCTION': value}, clear=True):
+            railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+            vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+            production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+            is_production = railway or vercel or production
+            assert is_production is True
+    print(f"✓ Truthy values correctly detected as production")
 
 
 if __name__ == "__main__":
