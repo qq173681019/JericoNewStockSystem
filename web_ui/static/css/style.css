@@ -580,6 +580,48 @@ input:checked + .slider:before {
     color: var(--text-primary);
 }
 
+/* ===== Technical Indicator Signal Colors (Chinese Stock Market Style) ===== */
+
+/* Bullish signal - Red (good for buying) */
+.indicator-value.signal-bullish {
+    color: var(--success-color) !important;  /* Red #ef4444 */
+    font-weight: 600;
+}
+
+/* Bearish signal - Green (good for selling) */
+.indicator-value.signal-bearish {
+    color: var(--danger-color) !important;   /* Green #10b981 */
+    font-weight: 600;
+}
+
+/* Neutral signal - Gray */
+.indicator-value.signal-neutral {
+    color: var(--text-secondary) !important;
+    font-weight: 400;
+}
+
+/* Add trend arrows (optional) */
+.indicator-value.signal-bullish::before {
+    content: '↗ ';
+    font-size: 0.8em;
+    opacity: 0.8;
+}
+
+.indicator-value.signal-bearish::before {
+    content: '↘ ';
+    font-size: 0.8em;
+    opacity: 0.8;
+}
+
+/* Dark theme adaptation */
+[data-theme="dark"] .indicator-value.signal-bullish {
+    color: #ff6b6b !important;  /* Red color for dark theme */
+}
+
+[data-theme="dark"] .indicator-value.signal-bearish {
+    color: #51cf66 !important;  /* Green color for dark theme */
+}
+
 /* ===== Tables ===== */
 table {
     width: 100%;
