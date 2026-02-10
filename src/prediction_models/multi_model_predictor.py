@@ -103,102 +103,226 @@ class MultiModelPredictor:
             return self._fallback_prediction(stock_data, pred_points, timeframe)
     
     def _technical_indicator_prediction(self, data, pred_points, timeframe):
-        """方法1: 基于技术指标的预测"""
+        """方法1: 基于技术指标的预测 - 增强量化算法"""
         try:
-            # 计算技术指标
             data = data.copy()
             
-            # MACD
-            ema12 = data['close'].ewm(span=12, adjust=False).mean()
-            ema26 = data['close'].ewm(span=26, adjust=False).mean()
-            macd = ema12 - ema26
-            signal = macd.ewm(span=9, adjust=False).mean()
-            macd_hist = macd - signal
+            # === 计算核心技术指标 ===
             
-            # RSI
+            # MACD (趋势指标)
+            exp1 = data['close'].ewm(span=12, adjust=False).mean()
+            exp2 = data['close'].ewm(span=26, adjust=False).mean()
+            macd = exp1 - exp2
+            signal = macd.ewm(span=9, adjust=False).mean()
+            macd_histogram = macd - signal
+            
+            # RSI (超买超卖指标)
             delta = data['close'].diff()
             gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
             loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
             rs = gain / loss
             rsi = 100 - (100 / (1 + rs))
             
-            # 移动平均线
-            ma5 = data['close'].rolling(window=min(5, len(data))).mean()
-            ma20 = data['close'].rolling(window=min(20, len(data))).mean()
+            # 布林带 (波动率指标)
+            ma20 = data['close'].rolling(window=20).mean()
+            std20 = data['close'].rolling(window=20).std()
+            upper_band = ma20 + (std20 * 2)
+            lower_band = ma20 - (std20 * 2)
             
-            # 布林带
-            bb_window = min(20, len(data))
-            bb_middle = data['close'].rolling(window=bb_window).mean()
-            bb_std = data['close'].rolling(window=bb_window).std()
-            bb_upper = bb_middle + (bb_std * 2)
-            bb_lower = bb_middle - (bb_std * 2)
+            # KDJ (随机指标)
+            low_14 = data['low'].rolling(window=14).min()
+            high_14 = data['high'].rolling(window=14).max()
+            # Avoid division by zero when price range is zero
+            price_range = high_14 - low_14
+            # When price is flat (range=0), set RSV to neutral (50)
+            rsv = pd.Series(index=data.index, dtype=float)
+            rsv = rsv.where(price_range == 0, (data['close'] - low_14) / price_range * 100)
+            rsv = rsv.fillna(50)  # Neutral value for flat markets
+            k = rsv.ewm(com=2, adjust=False).mean()
+            d = k.ewm(com=2, adjust=False).mean()
+            j = 3 * k - 2 * d
             
-            # 获取最新指标值
-            latest_close = data['close'].iloc[-1]
-            latest_macd = macd.iloc[-1] if not pd.isna(macd.iloc[-1]) else 0
-            latest_signal = signal.iloc[-1] if not pd.isna(signal.iloc[-1]) else 0
-            latest_rsi = rsi.iloc[-1] if not pd.isna(rsi.iloc[-1]) else 50
-            latest_ma5 = ma5.iloc[-1] if not pd.isna(ma5.iloc[-1]) else latest_close
-            latest_ma20 = ma20.iloc[-1] if not pd.isna(ma20.iloc[-1]) else latest_close
-            latest_bb_upper = bb_upper.iloc[-1] if not pd.isna(bb_upper.iloc[-1]) else latest_close * 1.05
-            latest_bb_lower = bb_lower.iloc[-1] if not pd.isna(bb_lower.iloc[-1]) else latest_close * 0.95
+            # 成交量趋势
+            volume_ma5 = data['volume'].rolling(window=5).mean()
+            volume_trend = 1.0
+            if pd.notna(volume_ma5.iloc[-1]) and volume_ma5.iloc[-1] > 0:
+                volume_trend = data['volume'].iloc[-1] / volume_ma5.iloc[-1]
             
-            # 预测逻辑
+            # === 生成交易信号 ===
+            current_price = data['close'].iloc[-1]
+            
+            # Validate current price is positive
+            if current_price <= 0:
+                raise ValueError(f"Invalid current price: {current_price}")
+            
+            # 1. MACD信号 (-1到1)
+            macd_hist_value = macd_histogram.iloc[-1]
+            if pd.notna(macd_hist_value):
+                macd_signal = np.tanh(macd_hist_value / current_price * 100)
+            else:
+                macd_signal = 0  # Neutral when MACD unavailable
+            
+            # 2. RSI信号 (-1到1)
+            rsi_value = rsi.iloc[-1]
+            if pd.notna(rsi_value):
+                if rsi_value > 70:
+                    rsi_signal = -0.5  # 超买，看跌
+                elif rsi_value < 30:
+                    rsi_signal = 0.5   # 超卖，看涨
+                else:
+                    rsi_signal = (rsi_value - 50) / 50 * 0.3
+            else:
+                rsi_signal = 0  # Neutral when RSI unavailable
+            
+            # 3. 布林带信号 (-1到1)
+            upper_val = upper_band.iloc[-1]
+            lower_val = lower_band.iloc[-1]
+            if pd.notna(upper_val) and pd.notna(lower_val):
+                bb_width = upper_val - lower_val
+                if bb_width > 0:
+                    bb_position = (current_price - lower_val) / bb_width
+                    bb_signal = (bb_position - 0.5) * 2  # 转换为-1到1
+                else:
+                    # Zero volatility scenario - neutral signal
+                    bb_signal = 0
+            else:
+                bb_signal = 0  # Neutral when bands unavailable
+            
+            # 4. KDJ信号 (-1到1)
+            j_value = j.iloc[-1]
+            if pd.notna(j_value):
+                kdj_signal = (j_value - 50) / 50
+                kdj_signal = max(min(kdj_signal, 1), -1)
+            else:
+                kdj_signal = 0  # Neutral when KDJ unavailable
+            
+            # 5. 成交量信号
+            volume_signal = (volume_trend - 1) * 0.5
+            volume_signal = max(min(volume_signal, 0.5), -0.5)
+            
+            # === 根据时间框架调整权重和波动率 ===
+            if timeframe == '30min':
+                # 30分钟：高频交易，注重短期动量
+                signal_weights = {
+                    'macd': 0.15,
+                    'rsi': 0.25,
+                    'bollinger': 0.30,
+                    'kdj': 0.20,
+                    'volume': 0.10
+                }
+                base_volatility = 0.003  # 0.3% 基础波动
+                momentum_factor = 1.5    # 动量放大系数
+                
+            elif timeframe == '1day':
+                # 1天：日内交易，平衡趋势和动量
+                signal_weights = {
+                    'macd': 0.30,
+                    'rsi': 0.20,
+                    'bollinger': 0.20,
+                    'kdj': 0.20,
+                    'volume': 0.10
+                }
+                base_volatility = 0.015  # 1.5% 基础波动
+                momentum_factor = 1.2
+            
+            elif timeframe == '1hour':
+                # 1小时
+                signal_weights = {
+                    'macd': 0.20,
+                    'rsi': 0.25,
+                    'bollinger': 0.25,
+                    'kdj': 0.20,
+                    'volume': 0.10
+                }
+                base_volatility = 0.005
+                momentum_factor = 1.3
+            
+            elif timeframe == '3day':
+                # 3天
+                signal_weights = {
+                    'macd': 0.30,
+                    'rsi': 0.20,
+                    'bollinger': 0.20,
+                    'kdj': 0.20,
+                    'volume': 0.10
+                }
+                base_volatility = 0.02
+                momentum_factor = 1.0
+                
+            else:
+                # 默认设置 (30day)
+                signal_weights = {
+                    'macd': 0.35,
+                    'rsi': 0.20,
+                    'bollinger': 0.20,
+                    'kdj': 0.15,
+                    'volume': 0.10
+                }
+                base_volatility = 0.03
+                momentum_factor = 1.0
+            
+            # === 生成预测价格序列 ===
             predictions = []
-            current_price = latest_close
+            current = current_price
+            
+            # 市场噪音缩放因子：代表基础波动率的20%，用于模拟市场不确定性
+            NOISE_SCALE_FACTOR = 0.2
             
             for i in range(pred_points):
-                # MACD信号
-                macd_signal = 1 if latest_macd > latest_signal else -1
+                # 计算综合信号
+                total_signal = (
+                    macd_signal * signal_weights['macd'] +
+                    rsi_signal * signal_weights['rsi'] +
+                    bb_signal * signal_weights['bollinger'] +
+                    kdj_signal * signal_weights['kdj'] +
+                    volume_signal * signal_weights['volume']
+                )
                 
-                # RSI信号
-                if latest_rsi > 70:
-                    rsi_signal = -1  # 超买
-                elif latest_rsi < 30:
-                    rsi_signal = 1   # 超卖
-                else:
-                    rsi_signal = 0   # 中性
+                # 应用动量和波动率
+                price_change_pct = total_signal * base_volatility * momentum_factor
                 
-                # 均线信号
-                ma_signal = 1 if latest_ma5 > latest_ma20 else -1
+                # 添加微小随机波动(模拟市场噪音)
+                noise = np.random.normal(0, base_volatility * NOISE_SCALE_FACTOR)
+                price_change_pct += noise
                 
-                # 布林带信号
-                if current_price > latest_bb_upper:
-                    bb_signal = -1  # 接近上轨，可能回调
-                elif current_price < latest_bb_lower:
-                    bb_signal = 1   # 接近下轨，可能反弹
-                else:
-                    bb_signal = 0   # 在带内
+                # 限制单步最大变化
+                max_change = base_volatility * 2
+                price_change_pct = max(min(price_change_pct, max_change), -max_change)
                 
-                # 综合信号
-                total_signal = (macd_signal * 0.3 + rsi_signal * 0.2 + 
-                               ma_signal * 0.3 + bb_signal * 0.2)
+                # 计算新价格
+                current = current * (1 + price_change_pct)
+                predictions.append(current)
                 
-                # 根据时间框架调整变化幅度
-                if timeframe == '1hour':
-                    change_factor = 0.002  # 1小时内变化较小
-                elif timeframe == '3day':
-                    change_factor = 0.01   # 3天中等变化
-                else:  # 30day
-                    change_factor = 0.03   # 30天较大变化
-                
-                # 计算预测价格
-                price_change = total_signal * change_factor * current_price
-                current_price = current_price + price_change
-                predictions.append(current_price)
+                # 信号衰减(模拟市场动态调整)
+                # MACD和RSI衰减较快(0.9)因为趋势可能快速反转
+                # 布林带衰减较慢(0.95)因为波动率变化相对缓慢
+                # KDJ衰减较快(0.9)因为它是短期动量指标，变化快速
+                macd_signal *= 0.9
+                rsi_signal *= 0.9
+                bb_signal *= 0.95
+                kdj_signal *= 0.9
             
             return {
                 'prices': predictions,
-                'method': 'technical_indicators',
+                'method': 'technical_indicators_enhanced',
                 'indicators': {
-                    'MACD': latest_macd,
-                    'RSI': latest_rsi,
-                    'MA5': latest_ma5,
-                    'MA20': latest_ma20
+                    'MACD': float(macd.iloc[-1]),
+                    'MACD_Signal': float(signal.iloc[-1]),
+                    'RSI': float(rsi.iloc[-1]),
+                    'Bollinger_Upper': float(upper_band.iloc[-1]),
+                    'Bollinger_Lower': float(lower_band.iloc[-1]),
+                    'KDJ_K': float(k.iloc[-1]),
+                    'KDJ_D': float(d.iloc[-1]),
+                    'KDJ_J': float(j.iloc[-1]),
+                    'Volume_Trend': float(volume_trend),
+                    '综合信号': float(total_signal)
                 }
             }
+            
         except Exception as e:
             print(f"技术指标预测失败: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return self._simple_trend_prediction(data, pred_points)
     
     def _machine_learning_prediction(self, data, pred_points, window_size):
