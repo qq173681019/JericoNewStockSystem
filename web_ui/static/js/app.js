@@ -249,6 +249,9 @@ function displayPredictionResults(data) {
         adviceElement.style.color = 'var(--warning-color)';
     }
     
+    // Apply indicator colors based on signals
+    applyIndicatorColors(data);
+    
     // Update chart
     updatePriceChart(data.priceHistory);
     
@@ -257,6 +260,34 @@ function displayPredictionResults(data) {
     
     // Show results
     predictionResults.style.display = 'block';
+}
+
+function applyIndicatorColors(data) {
+    /**
+     * Apply colors to technical indicators based on their signals
+     * Following Chinese stock market convention:
+     * - Red (success-color) = Bullish signal (good for buying)
+     * - Green (danger-color) = Bearish signal (good for selling)
+     * - Gray (text-secondary) = Neutral signal
+     */
+    const signals = data.indicatorSignals || {};
+    
+    const indicators = [
+        'rsi', 'macd', 'kdj', 'ma5', 'ma20', 'boll'
+    ];
+    
+    indicators.forEach(id => {
+        const element = document.getElementById(id);
+        if (element && signals[id.toUpperCase()]) {
+            const signal = signals[id.toUpperCase()];
+            
+            // Remove old style classes
+            element.classList.remove('signal-bullish', 'signal-bearish', 'signal-neutral');
+            
+            // Add new style class
+            element.classList.add(`signal-${signal}`);
+        }
+    });
 }
 
 function displayErrorMessage(message, errorType) {
