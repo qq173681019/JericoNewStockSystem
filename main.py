@@ -23,6 +23,8 @@ def main():
     
     if is_production:
         # Production mode: Run Flask Web API
+        # Note: Using print() instead of logger for production to avoid logger initialization overhead
+        # Flask provides its own logging infrastructure
         print("🌐 Production environment detected - starting Web API")
         try:
             from run_web_ui import app
@@ -37,10 +39,9 @@ def main():
         try:
             from src.utils import setup_logger
             logger = setup_logger()
-            logger.info("Starting SIAPS in GUI mode (local)...")
+            logger.info("Starting SIAPS application in GUI mode (local)...")
             
             from src.gui import run_app
-            logger.info("Starting SIAPS application...")
             run_app()
         except ImportError as e:
             print(f"❌ GUI not available: {e}")
@@ -48,7 +49,7 @@ def main():
             print("   Install GUI dependencies with: pip install customtkinter matplotlib")
             sys.exit(1)
         except Exception as e:
-            print(f"❌ Application error: {e}")
+            print(f"❌ GUI startup error: {e}")
             sys.exit(1)
 
 if __name__ == "__main__":
