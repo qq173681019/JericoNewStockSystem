@@ -117,6 +117,7 @@ def generate_fallback_historical_data(stock_code: str, base_price: float = None,
     # 如果没有提供基准价格，根据股票代码生成一个合理的价格
     if base_price is None:
         # 使用股票代码的哈希值生成稳定的价格
+        # code_hash范围: 0-9999, 因此价格范围: 10-109.99元
         code_hash = hash(stock_code) % 10000
         base_price = 10 + (code_hash / 100)  # 10-110元之间
     
@@ -124,8 +125,8 @@ def generate_fallback_historical_data(stock_code: str, base_price: float = None,
     dates = [datetime.now() - timedelta(days=days-i) for i in range(days)]
     
     # 使用随机游走生成收盘价
-    np.random.seed(hash(stock_code) % (2**32))  # 使用股票代码作为种子，确保可重现
-    returns = np.random.normal(0.001, 0.02, days)  # 均值0.1%，标准差2%的日收益率
+    np.random.seed(hash(stock_code) % (2**32))  # 使用股票代码作为种子， 确保可重现
+    returns = np.random.normal(0.001, 0.02, days)  # 均值0.1%， 标准差2%的日收益率
     close_prices = [base_price]
     for r in returns[1:]:
         close_prices.append(close_prices[-1] * (1 + r))
