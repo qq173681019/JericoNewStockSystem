@@ -134,14 +134,19 @@ class MultiModelPredictor:
             high_14 = data['high'].rolling(window=14).max()
             # Avoid division by zero when price range is zero
             price_range = high_14 - low_14
-            rsv = (data['close'] - low_14) / price_range.replace(0, 1) * 100
+            # When price is flat (range=0), set RSV to neutral (50)
+            rsv = pd.Series(index=data.index, dtype=float)
+            rsv = rsv.where(price_range == 0, (data['close'] - low_14) / price_range * 100)
+            rsv = rsv.fillna(50)  # Neutral value for flat markets
             k = rsv.ewm(com=2, adjust=False).mean()
             d = k.ewm(com=2, adjust=False).mean()
             j = 3 * k - 2 * d
             
             # 成交量趋势
             volume_ma5 = data['volume'].rolling(window=5).mean()
-            volume_trend = data['volume'].iloc[-1] / volume_ma5.iloc[-1] if volume_ma5.iloc[-1] > 0 else 1
+            volume_trend = 1.0
+            if pd.notna(volume_ma5.iloc[-1]) and volume_ma5.iloc[-1] > 0:
+                volume_trend = data['volume'].iloc[-1] / volume_ma5.iloc[-1]
             
             # === 生成交易信号 ===
             current_price = data['close'].iloc[-1]
@@ -151,29 +156,45 @@ class MultiModelPredictor:
                 raise ValueError(f"Invalid current price: {current_price}")
             
             # 1. MACD信号 (-1到1)
-            macd_signal = np.tanh(macd_histogram.iloc[-1] / current_price * 100)
+            macd_hist_value = macd_histogram.iloc[-1]
+            if pd.notna(macd_hist_value):
+                macd_signal = np.tanh(macd_hist_value / current_price * 100)
+            else:
+                macd_signal = 0  # Neutral when MACD unavailable
             
             # 2. RSI信号 (-1到1)
             rsi_value = rsi.iloc[-1]
-            if rsi_value > 70:
-                rsi_signal = -0.5  # 超买，看跌
-            elif rsi_value < 30:
-                rsi_signal = 0.5   # 超卖，看涨
+            if pd.notna(rsi_value):
+                if rsi_value > 70:
+                    rsi_signal = -0.5  # 超买，看跌
+                elif rsi_value < 30:
+                    rsi_signal = 0.5   # 超卖，看涨
+                else:
+                    rsi_signal = (rsi_value - 50) / 50 * 0.3
             else:
-                rsi_signal = (rsi_value - 50) / 50 * 0.3
+                rsi_signal = 0  # Neutral when RSI unavailable
             
             # 3. 布林带信号 (-1到1)
-            bb_width = upper_band.iloc[-1] - lower_band.iloc[-1]
-            if bb_width > 0:
-                bb_position = (current_price - lower_band.iloc[-1]) / bb_width
-                bb_signal = (bb_position - 0.5) * 2  # 转换为-1到1
+            upper_val = upper_band.iloc[-1]
+            lower_val = lower_band.iloc[-1]
+            if pd.notna(upper_val) and pd.notna(lower_val):
+                bb_width = upper_val - lower_val
+                if bb_width > 0:
+                    bb_position = (current_price - lower_val) / bb_width
+                    bb_signal = (bb_position - 0.5) * 2  # 转换为-1到1
+                else:
+                    # Zero volatility scenario - neutral signal
+                    bb_signal = 0
             else:
-                # Zero volatility scenario - neutral signal
-                bb_signal = 0
+                bb_signal = 0  # Neutral when bands unavailable
             
             # 4. KDJ信号 (-1到1)
-            kdj_signal = (j.iloc[-1] - 50) / 50
-            kdj_signal = max(min(kdj_signal, 1), -1)
+            j_value = j.iloc[-1]
+            if pd.notna(j_value):
+                kdj_signal = (j_value - 50) / 50
+                kdj_signal = max(min(kdj_signal, 1), -1)
+            else:
+                kdj_signal = 0  # Neutral when KDJ unavailable
             
             # 5. 成交量信号
             volume_signal = (volume_trend - 1) * 0.5
@@ -244,6 +265,9 @@ class MultiModelPredictor:
             predictions = []
             current = current_price
             
+            # 市场噪音缩放因子：代表基础波动率的20%，用于模拟市场不确定性
+            NOISE_SCALE_FACTOR = 0.2
+            
             for i in range(pred_points):
                 # 计算综合信号
                 total_signal = (
@@ -258,7 +282,7 @@ class MultiModelPredictor:
                 price_change_pct = total_signal * base_volatility * momentum_factor
                 
                 # 添加微小随机波动(模拟市场噪音)
-                noise = np.random.normal(0, base_volatility * 0.2)
+                noise = np.random.normal(0, base_volatility * NOISE_SCALE_FACTOR)
                 price_change_pct += noise
                 
                 # 限制单步最大变化
@@ -272,6 +296,7 @@ class MultiModelPredictor:
                 # 信号衰减(模拟市场动态调整)
                 # MACD和RSI衰减较快(0.9)因为趋势可能快速反转
                 # 布林带衰减较慢(0.95)因为波动率变化相对缓慢
+                # KDJ衰减较快(0.9)因为它是短期动量指标，变化快速
                 macd_signal *= 0.9
                 rsi_signal *= 0.9
                 bb_signal *= 0.95
