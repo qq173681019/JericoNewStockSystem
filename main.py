@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SIAPS - Stock Intelligent Analysis & Prediction System
-Main entry point
+Main entry point with smart environment detection
 """
 import sys
 import os
@@ -11,42 +11,38 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 sys.path.insert(0, str(ROOT_DIR))
 
-from src.utils import setup_logger
-
-logger = setup_logger()
-
+# Detect production environment
+is_production = (
+    os.getenv('RAILWAY_ENVIRONMENT') or 
+    os.getenv('VERCEL') or 
+    os.getenv('PRODUCTION') or
+    os.getenv('DYNO')  # Heroku
+)
 
 def main():
-    """Main entry point"""
-    # Check if running in web/server mode (Railway, Vercel, etc.)
-    is_web_mode = os.environ.get('RAILWAY_ENVIRONMENT') or \
-                  os.environ.get('VERCEL') or \
-                  os.environ.get('WEB_MODE', '').lower() == 'true'
-    
-    if is_web_mode:
-        logger.info("Starting SIAPS in WEB mode...")
-        try:
-            # Import and run web app
-            from src.web import app
-            port = int(os.environ.get('PORT', 5000))
-            app.run(host='0.0.0.0', port=port)
-        except Exception as e:
-            logger.error(f"Web application error: {str(e)}", exc_info=True)
-            sys.exit(1)
+    """Main entry point with environment detection"""
+    if is_production:
+        # Production: Run Flask Web API
+        print("🌐 Production environment detected - starting Web API")
+        from run_web_ui import app
+        port = int(os.getenv('PORT', 5000))
+        app.run(host='0.0.0.0', port=port, debug=False)
     else:
-        logger.info("Starting SIAPS in GUI mode...")
+        # Development: Run Desktop GUI
+        print("💻 Development environment detected - starting Desktop GUI")
         try:
-            # Import and run GUI app
             from src.gui import run_app
+            from src.utils import setup_logger
+            logger = setup_logger()
+            logger.info("Starting SIAPS application...")
             run_app()
         except ImportError as e:
-            logger.error(f"GUI dependencies not installed. Install with: pip install customtkinter")
-            logger.error(f"Or run in web mode by setting environment variable: WEB_MODE=true")
+            print(f"❌ GUI not available: {e}")
+            print("💡 For web interface, run: python run_web_ui.py")
             sys.exit(1)
         except Exception as e:
-            logger.error(f"Application error: {str(e)}", exc_info=True)
+            print(f"❌ Application error: {e}")
             sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
