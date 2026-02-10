@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 SIAPS - Stock Intelligent Analysis & Prediction System
-Main entry point
+Main entry point - supports both GUI (local) and Web API (production)
 """
 import sys
 import os
@@ -17,31 +17,36 @@ logger = setup_logger()
 
 
 def main():
-    """Main entry point"""
-    # Check if running in web/server mode (Railway, Vercel, etc.)
-    is_web_mode = os.environ.get('RAILWAY_ENVIRONMENT') or \
-                  os.environ.get('VERCEL') or \
-                  os.environ.get('WEB_MODE', '').lower() == 'true'
+    """Main entry point - decides between GUI and Web mode"""
+    # Check if running in cloud environment (Railway, Vercel, etc.)
+    # Treat environment variable as set if it exists and is not explicitly disabled
+    railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
+    vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
+    production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
+    is_production = railway or vercel or production
     
-    if is_web_mode:
-        logger.info("Starting SIAPS in WEB mode...")
+    if is_production:
+        # Production mode: Run Flask Web API
+        logger.info("Starting SIAPS in Web API mode (production)...")
         try:
-            # Import and run web app
-            from src.web import app
-            port = int(os.environ.get('PORT', 5000))
+            from run_web_ui import app
+            port = int(os.getenv('PORT', 5000))
             app.run(host='0.0.0.0', port=port)
         except Exception as e:
-            logger.error(f"Web application error: {str(e)}", exc_info=True)
+            logger.error(f"Web API startup error: {str(e)}", exc_info=True)
             sys.exit(1)
     else:
-        logger.info("Starting SIAPS in GUI mode...")
+        # Local mode: Run Desktop GUI
+        logger.info("Starting SIAPS in GUI mode (local)...")
         try:
-            # Import and run GUI app
             from src.gui import run_app
             run_app()
         except ImportError as e:
-            logger.error(f"GUI dependencies not installed. Install with: pip install customtkinter")
-            logger.error(f"Or run in web mode by setting environment variable: WEB_MODE=true")
+            logger.error(
+                "GUI dependencies not installed. "
+                "Install with: pip install customtkinter matplotlib\n"
+                "Or run the Web UI with: python run_web_ui.py"
+            )
             sys.exit(1)
         except Exception as e:
             logger.error(f"Application error: {str(e)}", exc_info=True)
