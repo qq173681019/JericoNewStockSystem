@@ -40,7 +40,7 @@ def main():
             from src.gui import run_app
             run_app()
         except ImportError as e:
-            logger.error(f"GUI dependencies not installed. Install with: pip install -r requirements-dev.txt")
+            logger.error(f"GUI dependencies not installed. Install with: pip install customtkinter")
             logger.error(f"Or run in web mode by setting environment variable: WEB_MODE=true")
             sys.exit(1)
         except Exception as e:

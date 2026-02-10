@@ -10,66 +10,58 @@ ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR))
 
 
+def check_web_mode():
+    """Helper function to check web mode based on environment variables"""
+    return os.environ.get('RAILWAY_ENVIRONMENT') or \
+           os.environ.get('VERCEL') or \
+           os.environ.get('WEB_MODE', '').lower() == 'true'
+
+
 def test_web_mode_detection():
     """Test that web mode is correctly detected based on environment variables"""
     
-    # Test 1: No environment variable - should be GUI mode
+    # Save current environment
     saved_env = {}
     for key in ['RAILWAY_ENVIRONMENT', 'VERCEL', 'WEB_MODE']:
         saved_env[key] = os.environ.pop(key, None)
     
-    is_web_mode = os.environ.get('RAILWAY_ENVIRONMENT') or \
-                  os.environ.get('VERCEL') or \
-                  os.environ.get('WEB_MODE', '').lower() == 'true'
-    assert is_web_mode is False, "Should default to GUI mode"
+    try:
+        # Test 1: No environment variable - should be GUI mode
+        assert not check_web_mode(), "Should default to GUI mode"
+        
+        # Test 2: RAILWAY_ENVIRONMENT set
+        os.environ['RAILWAY_ENVIRONMENT'] = 'production'
+        assert check_web_mode(), "Should detect Railway environment"
+        os.environ.pop('RAILWAY_ENVIRONMENT')
+        
+        # Test 3: VERCEL environment set
+        os.environ['VERCEL'] = '1'
+        assert check_web_mode(), "Should detect Vercel environment"
+        os.environ.pop('VERCEL')
+        
+        # Test 4: WEB_MODE=true
+        os.environ['WEB_MODE'] = 'true'
+        assert check_web_mode(), "Should detect WEB_MODE=true"
+        os.environ.pop('WEB_MODE')
+        
+        # Test 5: WEB_MODE=TRUE (uppercase)
+        os.environ['WEB_MODE'] = 'TRUE'
+        assert check_web_mode(), "Should detect WEB_MODE=TRUE (case insensitive)"
+        os.environ.pop('WEB_MODE')
+        
+        # Test 6: WEB_MODE=false
+        os.environ['WEB_MODE'] = 'false'
+        assert not check_web_mode(), "Should not detect WEB_MODE=false"
+        
+        print("✓ All web mode detection tests passed")
     
-    # Test 2: RAILWAY_ENVIRONMENT set
-    os.environ['RAILWAY_ENVIRONMENT'] = 'production'
-    is_web_mode = os.environ.get('RAILWAY_ENVIRONMENT') or \
-                  os.environ.get('VERCEL') or \
-                  os.environ.get('WEB_MODE', '').lower() == 'true'
-    assert is_web_mode, "Should detect Railway environment"
-    os.environ.pop('RAILWAY_ENVIRONMENT')
-    
-    # Test 3: VERCEL environment set
-    os.environ['VERCEL'] = '1'
-    is_web_mode = os.environ.get('RAILWAY_ENVIRONMENT') or \
-                  os.environ.get('VERCEL') or \
-                  os.environ.get('WEB_MODE', '').lower() == 'true'
-    assert is_web_mode, "Should detect Vercel environment"
-    os.environ.pop('VERCEL')
-    
-    # Test 4: WEB_MODE=true
-    os.environ['WEB_MODE'] = 'true'
-    is_web_mode = os.environ.get('RAILWAY_ENVIRONMENT') or \
-                  os.environ.get('VERCEL') or \
-                  os.environ.get('WEB_MODE', '').lower() == 'true'
-    assert is_web_mode, "Should detect WEB_MODE=true"
-    os.environ.pop('WEB_MODE')
-    
-    # Test 5: WEB_MODE=TRUE (uppercase)
-    os.environ['WEB_MODE'] = 'TRUE'
-    is_web_mode = os.environ.get('RAILWAY_ENVIRONMENT') or \
-                  os.environ.get('VERCEL') or \
-                  os.environ.get('WEB_MODE', '').lower() == 'true'
-    assert is_web_mode, "Should detect WEB_MODE=TRUE (case insensitive)"
-    os.environ.pop('WEB_MODE')
-    
-    # Test 6: WEB_MODE=false
-    os.environ['WEB_MODE'] = 'false'
-    is_web_mode = os.environ.get('RAILWAY_ENVIRONMENT') or \
-                  os.environ.get('VERCEL') or \
-                  os.environ.get('WEB_MODE', '').lower() == 'true'
-    assert is_web_mode is False, "Should not detect WEB_MODE=false"
-    
-    # Restore environment
-    for key, value in saved_env.items():
-        if value is not None:
-            os.environ[key] = value
-        else:
-            os.environ.pop(key, None)
-    
-    print("✓ All web mode detection tests passed")
+    finally:
+        # Restore environment
+        for key, value in saved_env.items():
+            if value is not None:
+                os.environ[key] = value
+            else:
+                os.environ.pop(key, None)
 
 
 def test_src_web_import():
