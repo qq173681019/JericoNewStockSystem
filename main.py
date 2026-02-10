@@ -18,13 +18,12 @@ def main():
     railway = os.getenv('RAILWAY_ENVIRONMENT', '').lower() not in ('', '0', 'false', 'no', 'off')
     vercel = os.getenv('VERCEL', '').lower() not in ('', '0', 'false', 'no', 'off')
     production = os.getenv('PRODUCTION', '').lower() not in ('', '0', 'false', 'no', 'off')
-    dyno = os.getenv('DYNO', '').lower() not in ('', '0', 'false', 'no', 'off')
+    dyno = os.getenv('DYNO', '').lower() not in ('', '0', 'false', 'no', 'off')  # Heroku
     is_production = railway or vercel or production or dyno
     
     if is_production:
         # Production mode: Run Flask Web API
-        # Note: Using print() instead of logger for production to avoid logger initialization overhead
-        # Flask provides its own logging infrastructure
+        # Note: Using print() instead of logger here because Flask provides its own logging infrastructure
         print("🌐 Production environment detected - starting Web API")
         try:
             from run_web_ui import app
