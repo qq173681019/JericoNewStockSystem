@@ -132,7 +132,9 @@ class MultiModelPredictor:
             # KDJ (随机指标)
             low_14 = data['low'].rolling(window=14).min()
             high_14 = data['high'].rolling(window=14).max()
-            rsv = (data['close'] - low_14) / (high_14 - low_14) * 100
+            # Avoid division by zero when price range is zero
+            price_range = high_14 - low_14
+            rsv = (data['close'] - low_14) / price_range.replace(0, 1) * 100
             k = rsv.ewm(com=2, adjust=False).mean()
             d = k.ewm(com=2, adjust=False).mean()
             j = 3 * k - 2 * d
@@ -143,6 +145,10 @@ class MultiModelPredictor:
             
             # === 生成交易信号 ===
             current_price = data['close'].iloc[-1]
+            
+            # Validate current price is positive
+            if current_price <= 0:
+                raise ValueError(f"Invalid current price: {current_price}")
             
             # 1. MACD信号 (-1到1)
             macd_signal = np.tanh(macd_histogram.iloc[-1] / current_price * 100)
@@ -157,8 +163,13 @@ class MultiModelPredictor:
                 rsi_signal = (rsi_value - 50) / 50 * 0.3
             
             # 3. 布林带信号 (-1到1)
-            bb_position = (current_price - lower_band.iloc[-1]) / (upper_band.iloc[-1] - lower_band.iloc[-1])
-            bb_signal = (bb_position - 0.5) * 2  # 转换为-1到1
+            bb_width = upper_band.iloc[-1] - lower_band.iloc[-1]
+            if bb_width > 0:
+                bb_position = (current_price - lower_band.iloc[-1]) / bb_width
+                bb_signal = (bb_position - 0.5) * 2  # 转换为-1到1
+            else:
+                # Zero volatility scenario - neutral signal
+                bb_signal = 0
             
             # 4. KDJ信号 (-1到1)
             kdj_signal = (j.iloc[-1] - 50) / 50
@@ -259,6 +270,8 @@ class MultiModelPredictor:
                 predictions.append(current)
                 
                 # 信号衰减(模拟市场动态调整)
+                # MACD和RSI衰减较快(0.9)因为趋势可能快速反转
+                # 布林带衰减较慢(0.95)因为波动率变化相对缓慢
                 macd_signal *= 0.9
                 rsi_signal *= 0.9
                 bb_signal *= 0.95
