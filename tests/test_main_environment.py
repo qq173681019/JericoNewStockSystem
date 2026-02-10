@@ -40,8 +40,8 @@ def test_environment_detection_local():
         env_copy.pop(key, None)
     
     with patch.dict(os.environ, env_copy, clear=True):
-        is_production = os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('VERCEL') or os.getenv('PRODUCTION')
-        assert is_production is None
+        is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
+        assert is_production is False
         print("✓ Local environment detection works")
 
 
@@ -61,8 +61,8 @@ def test_main_production_mode():
                     import main as main_module
                 
                 # Since we're testing the logic, check that environment detection works
-                is_production = os.getenv('RAILWAY_ENVIRONMENT') or os.getenv('VERCEL') or os.getenv('PRODUCTION')
-                assert is_production is not None
+                is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
+                assert is_production is True
                 print("✓ Production mode environment check works")
 
 
@@ -82,10 +82,32 @@ def test_port_configuration():
         print("✓ Custom port from environment variable works")
 
 
+def test_environment_edge_cases():
+    """Test edge cases like empty strings and false values"""
+    
+    # Test empty string should still be detected as production
+    with patch.dict(os.environ, {'RAILWAY_ENVIRONMENT': ''}, clear=True):
+        is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
+        assert is_production is True
+        print("✓ Empty string environment variable correctly detected as production")
+    
+    # Test '0' or 'false' should still be detected as production
+    with patch.dict(os.environ, {'PRODUCTION': '0'}, clear=True):
+        is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
+        assert is_production is True
+        print("✓ '0' environment variable correctly detected as production")
+    
+    with patch.dict(os.environ, {'VERCEL': 'false'}, clear=True):
+        is_production = os.getenv('RAILWAY_ENVIRONMENT') is not None or os.getenv('VERCEL') is not None or os.getenv('PRODUCTION') is not None
+        assert is_production is True
+        print("✓ 'false' environment variable correctly detected as production")
+
+
 if __name__ == "__main__":
     print("Testing environment detection...")
     test_environment_detection_production()
     test_environment_detection_local()
     test_main_production_mode()
     test_port_configuration()
+    test_environment_edge_cases()
     print("\n✓ All main.py environment detection tests passed!")
