@@ -18,6 +18,23 @@ from src.utils import setup_logger
 logger = setup_logger(__name__)
 
 
+# AI sector configuration constants
+MIN_AI_SECTORS_HEATMAP = 5  # Minimum AI sectors for heatmap view (limit >= 50)
+MIN_AI_SECTORS_SMALL = 2    # Minimum AI sectors for small lists (limit < 50)
+HEATMAP_THRESHOLD = 50      # Threshold to determine if it's a heatmap view
+
+# Synthetic AI sector data (used as fallback when real data is unavailable)
+SYNTHETIC_AI_SECTORS = [
+    {'name': '人工智能', 'heat': 88, 'stocks': 87, 'change': 4.2, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '机器人', 'heat': 85, 'stocks': 63, 'change': 3.8, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': 'AIGC', 'heat': 90, 'stocks': 45, 'change': 5.1, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': 'ChatGPT', 'heat': 87, 'stocks': 38, 'change': 4.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '算力', 'heat': 84, 'stocks': 52, 'change': 3.9, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '大模型', 'heat': 86, 'stocks': 41, 'change': 4.3, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '智能驾驶', 'heat': 82, 'stocks': 58, 'change': 3.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+]
+
+
 class MultiSourceDataFetcher:
     """Fetches data from multiple sources and provides reliability comparison"""
     
@@ -481,9 +498,8 @@ class MultiSourceDataFetcher:
             if any(keyword in name for keyword in ai_keywords)
         )
         
-        # For heatmap (limit >= 50), ensure at least 5 AI sectors are visible
-        # For small lists (limit < 50), ensure at least 2 AI sectors
-        min_ai_sectors = 5 if limit >= 50 else 2
+        # Determine minimum AI sectors based on list size
+        min_ai_sectors = MIN_AI_SECTORS_HEATMAP if limit >= HEATMAP_THRESHOLD else MIN_AI_SECTORS_SMALL
         
         if existing_ai_count >= min_ai_sectors:
             logger.info(f"AI-related sectors already sufficient: {existing_ai_count} sectors present")
@@ -580,18 +596,7 @@ class MultiSourceDataFetcher:
         # Fallback: If no real data available, provide synthetic AI sector data
         # This ensures AI sectors are always visible even when data source fails
         logger.info("Using synthetic AI sector data as fallback")
-        
-        synthetic_ai_sectors = [
-            {'name': '人工智能', 'heat': 88, 'stocks': 87, 'change': 4.2, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-            {'name': '机器人', 'heat': 85, 'stocks': 63, 'change': 3.8, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-            {'name': 'AIGC', 'heat': 90, 'stocks': 45, 'change': 5.1, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-            {'name': 'ChatGPT', 'heat': 87, 'stocks': 38, 'change': 4.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-            {'name': '算力', 'heat': 84, 'stocks': 52, 'change': 3.9, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-            {'name': '大模型', 'heat': 86, 'stocks': 41, 'change': 4.3, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-            {'name': '智能驾驶', 'heat': 82, 'stocks': 58, 'change': 3.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-        ]
-        
-        return synthetic_ai_sectors[:max_count]
+        return SYNTHETIC_AI_SECTORS[:max_count]
 
     def compare_sources(self, stock_codes: List[str]) -> pd.DataFrame:
 
