@@ -1301,6 +1301,9 @@ tbody tr:hover {
     transition: filter 0.2s, z-index 0.1s, transform 0.3s;
     border: 1px solid rgba(255, 255, 255, 0.15);
     box-sizing: border-box;
+    /* Default state: scale down to 0.5 (half size) */
+    transform: scale(0.5);
+    transform-origin: center center;
 }
 
 .treemap-cell:hover {
@@ -1316,7 +1319,7 @@ tbody tr:hover {
      * 3. Must guarantee fixed positioning and z-index for proper overlay effect
      */
     position: fixed !important;
-    transform: scale(2.5);
+    transform: scale(1.0) !important;
     z-index: 1000 !important;
     border: 3px solid white;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
