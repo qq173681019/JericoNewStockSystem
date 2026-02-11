@@ -37,11 +37,12 @@ class MultiModelPredictor:
         self.weights = weights or {'technical': 0.3, 'ml': 0.4, 'support_resistance': 0.3}
         self.scaler = StandardScaler()
         
-    def predict_multi_timeframe(self, stock_data, timeframe='3day'):
+    def predict_multi_timeframe(self, stock_data, timeframe='3day', current_price=None):
         """
         多时间框架预测主函数
         stock_data: DataFrame, 股票历史数据，需包含 'close', 'high', 'low', 'volume' 列
         timeframe: str, 时间框架 ('1hour', '3day', '30day')
+        current_price: float, 当前实时价格，如果提供则用于计算变化百分比，否则使用历史数据最后收盘价
         返回: dict, 包含各模型预测结果和集成结果
         """
         # 根据时间框架确定预测点数
@@ -61,7 +62,7 @@ class MultiModelPredictor:
         try:
             # 确保有足够的数据
             if len(stock_data) < window_size:
-                return self._fallback_prediction(stock_data, pred_points, timeframe)
+                return self._fallback_prediction(stock_data, pred_points, timeframe, current_price)
             
             # 方法1: 技术指标预测
             tech_pred = self._technical_indicator_prediction(stock_data, pred_points, timeframe)
@@ -84,14 +85,15 @@ class MultiModelPredictor:
             results['confidence'] = confidence
             
             # 计算变化百分比
-            current_price = stock_data['close'].iloc[-1]
+            # 使用实时价格（如果提供）或历史数据最后收盘价
+            base_price = current_price if current_price is not None else stock_data['close'].iloc[-1]
             predicted_prices = ensemble_pred['prices']
-            price_changes = [(p - current_price) / current_price * 100 for p in predicted_prices]
+            price_changes = [(p - base_price) / base_price * 100 for p in predicted_prices]
             results['price_change_pcts'] = price_changes
             
             # 生成交易建议
             results['trading_signal'] = self._generate_trading_signal(
-                current_price, predicted_prices, confidence
+                base_price, predicted_prices, confidence
             )
             
             return results
@@ -100,7 +102,7 @@ class MultiModelPredictor:
             print(f"多模型预测失败: {str(e)}")
             import traceback
             traceback.print_exc()
-            return self._fallback_prediction(stock_data, pred_points, timeframe)
+            return self._fallback_prediction(stock_data, pred_points, timeframe, current_price)
     
     def _technical_indicator_prediction(self, data, pred_points, timeframe):
         """方法1: 基于技术指标的预测 - 增强量化算法"""
@@ -590,22 +592,30 @@ class MultiModelPredictor:
                 'method': 'fallback'
             }
     
-    def _fallback_prediction(self, data, pred_points, timeframe):
+    def _fallback_prediction(self, data, pred_points, timeframe, current_price=None):
         """备用预测方法（当其他方法都失败时）"""
         try:
             last_price = data['close'].iloc[-1]
+            # Use current_price if provided, otherwise use historical last price
+            base_price = current_price if current_price is not None else last_price
+            
+            # Simple prediction: assume price stays the same
+            predicted_prices = [last_price] * pred_points
+            # Calculate change percentages based on current price vs predicted
+            price_changes = [(p - base_price) / base_price * 100 for p in predicted_prices]
+            
             return {
-                'technical': {'prices': [last_price] * pred_points, 'method': 'fallback'},
-                'machine_learning': {'prices': [last_price] * pred_points, 'method': 'fallback'},
-                'support_resistance': {'prices': [last_price] * pred_points, 'method': 'fallback'},
-                'ensemble': {'prices': [last_price] * pred_points, 'method': 'fallback'},
+                'technical': {'prices': predicted_prices, 'method': 'fallback'},
+                'machine_learning': {'prices': predicted_prices, 'method': 'fallback'},
+                'support_resistance': {'prices': predicted_prices, 'method': 'fallback'},
+                'ensemble': {'prices': predicted_prices, 'method': 'fallback'},
                 'confidence': 0.5,
-                'price_change_pcts': [0] * pred_points,
+                'price_change_pcts': price_changes,
                 'trading_signal': {
                     'recommendation': '持有',
                     'action': 'hold',
                     'confidence': 0.5,
-                    'expected_change': 0
+                    'expected_change': price_changes[-1] if price_changes else 0
                 }
             }
         except Exception as e:
