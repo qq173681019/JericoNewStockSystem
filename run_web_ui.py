@@ -1015,7 +1015,19 @@ def get_analytics():
                 {'name': '美容护理', 'heat': 59, 'stocks': 32, 'change': 0.6, 'source': 'demo'},
                 {'name': '家用电器', 'heat': 54, 'stocks': 47, 'change': -0.2, 'source': 'demo'},
                 {'name': '社会服务', 'heat': 49, 'stocks': 55, 'change': -0.9, 'source': 'demo'},
-                {'name': '煤炭', 'heat': 47, 'stocks': 43, 'change': -1.3, 'source': 'demo'}
+                {'name': '煤炭', 'heat': 47, 'stocks': 43, 'change': -1.3, 'source': 'demo'},
+                {'name': '人工智能', 'heat': 92, 'stocks': 87, 'change': 5.8, 'source': 'demo'},
+                {'name': 'AIGC', 'heat': 89, 'stocks': 45, 'change': 4.9, 'source': 'demo'},
+                {'name': 'ChatGPT', 'heat': 86, 'stocks': 38, 'change': 4.5, 'source': 'demo'},
+                {'name': '算力', 'heat': 84, 'stocks': 52, 'change': 3.8, 'source': 'demo'},
+                {'name': '机器人', 'heat': 81, 'stocks': 63, 'change': 3.6, 'source': 'demo'},
+                {'name': '云计算', 'heat': 85, 'stocks': 72, 'change': 4.1, 'source': 'demo'},
+                {'name': '大数据', 'heat': 79, 'stocks': 58, 'change': 3.2, 'source': 'demo'},
+                {'name': '物联网', 'heat': 76, 'stocks': 69, 'change': 2.9, 'source': 'demo'},
+                {'name': '5G', 'heat': 73, 'stocks': 48, 'change': 2.4, 'source': 'demo'},
+                {'name': '网络安全', 'heat': 77, 'stocks': 54, 'change': 2.8, 'source': 'demo'},
+                {'name': '工业互联网', 'heat': 70, 'stocks': 41, 'change': 2.1, 'source': 'demo'},
+                {'name': '区块链', 'heat': 68, 'stocks': 35, 'change': 1.7, 'source': 'demo'}
             ]
         
         sectors_data = {

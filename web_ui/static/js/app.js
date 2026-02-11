@@ -1437,7 +1437,7 @@ function initTreemapEventHandlers() {
             const prevData = enlargedCell.data;
             enlargedCell.element.classList.remove('enlarged');
             enlargedCell.element.style.position = 'absolute';
-            enlargedCell.element.style.transform = '';
+            enlargedCell.element.style.transform = 'scale(0.5)';
             enlargedCell.element.style.zIndex = '';
             enlargedCell.element.style.left = prevData.x + 'px';
             enlargedCell.element.style.top = prevData.y + 'px';
@@ -1448,30 +1448,20 @@ function initTreemapEventHandlers() {
 
 /**
  * Handle click on treemap cell to enlarge or un-enlarge it.
- * Small cells (area < ENLARGE_THRESHOLD_AREA) can be enlarged for better text visibility.
+ * All cells can be enlarged when clicked - threshold removed per user requirement.
+ * Default state: cells are scaled to 0.5 (half of original designed size)
+ * Enlarged state: cells are scaled to 1.0 (original designed size, appears 2x larger than default)
  * 
  * @param {HTMLElement} cellElement - The DOM element of the clicked cell
  * @param {Object} cellData - The cell's data including position (x, y) and size (w, h)
  * @param {Event} event - The click event object
  */
 function handleTreemapCellClick(cellElement, cellData, event) {
-    const area = cellData.w * cellData.h;
-    
-    // Determine threshold based on mobile or desktop
-    const isMobile = window.innerWidth < TREEMAP_CONFIG.MOBILE_WIDTH_THRESHOLD;
-    const threshold = isMobile ? TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA_MOBILE : TREEMAP_CONFIG.ENLARGE_THRESHOLD_AREA;
-    
-    // Only enlarge small cells using configured threshold
-    // Small cells have area LESS THAN threshold - fixed logic
-    if (area >= threshold && !cellElement.classList.contains('enlarged')) {
-        return; // Don't enlarge large cells - they're already readable
-    }
-    
     // If this cell is already enlarged, un-enlarge it
     if (cellElement.classList.contains('enlarged')) {
         cellElement.classList.remove('enlarged');
         cellElement.style.position = 'absolute';
-        cellElement.style.transform = '';
+        cellElement.style.transform = 'scale(0.5)';
         cellElement.style.zIndex = '';
         cellElement.style.left = cellData.x + 'px';
         cellElement.style.top = cellData.y + 'px';
@@ -1484,7 +1474,7 @@ function handleTreemapCellClick(cellElement, cellData, event) {
         const prevData = enlargedCell.data;
         enlargedCell.element.classList.remove('enlarged');
         enlargedCell.element.style.position = 'absolute';
-        enlargedCell.element.style.transform = '';
+        enlargedCell.element.style.transform = 'scale(0.5)';
         enlargedCell.element.style.zIndex = '';
         enlargedCell.element.style.left = prevData.x + 'px';
         enlargedCell.element.style.top = prevData.y + 'px';
@@ -1503,7 +1493,8 @@ function handleTreemapCellClick(cellElement, cellData, event) {
     cellElement.style.position = 'fixed';
     cellElement.style.left = viewportCenterX + 'px';
     cellElement.style.top = viewportCenterY + 'px';
-    cellElement.style.transform = `translate(-50%, -50%) scale(${TREEMAP_CONFIG.ENLARGE_SCALE_FACTOR})`;
+    // Scale to 1.0 (original designed size), which appears 2x larger compared to default 0.5
+    cellElement.style.transform = `translate(-50%, -50%) scale(1.0)`;
     cellElement.style.zIndex = '1000';
     
     enlargedCell = { element: cellElement, data: cellData };
