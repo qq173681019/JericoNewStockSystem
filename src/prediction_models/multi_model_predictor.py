@@ -599,10 +599,11 @@ class MultiModelPredictor:
             # Use current_price if provided, otherwise use historical last price
             base_price = current_price if current_price is not None else last_price
             
-            # Simple prediction: assume price stays the same
-            predicted_prices = [last_price] * pred_points
-            # Calculate change percentages based on current price vs predicted
-            price_changes = [(p - base_price) / base_price * 100 for p in predicted_prices]
+            # Simple prediction: assume price stays at base_price to be consistent
+            # This ensures the percentage change accurately reflects the prediction
+            predicted_prices = [base_price] * pred_points
+            # Calculate change percentages - will be 0% since we predict no change
+            price_changes = [0.0] * pred_points
             
             return {
                 'technical': {'prices': predicted_prices, 'method': 'fallback'},
@@ -615,7 +616,7 @@ class MultiModelPredictor:
                     'recommendation': '持有',
                     'action': 'hold',
                     'confidence': 0.5,
-                    'expected_change': price_changes[-1] if price_changes else 0
+                    'expected_change': 0.0
                 }
             }
         except Exception as e:

@@ -469,7 +469,7 @@ class MultiSourceDataFetcher:
             limit: Target number of sectors
             
         Returns:
-            Updated list with AI sectors included
+            Updated list with AI sectors included (AI sectors prioritized to appear near top)
         """
         # Define important AI-related sector keywords
         ai_keywords = ['AI', '人工智能', 'AI应用', '机器人', 'ChatGPT', 'AIGC', '算力']
@@ -487,22 +487,34 @@ class MultiSourceDataFetcher:
             return sectors[:limit]
         
         # Try to fetch AI sector data from the full dataset
-        ai_sectors = self._fetch_ai_sectors_from_full_data()
+        # Allow up to 2 AI sectors to be added without overwhelming the list
+        max_ai_sectors = min(2, max(1, limit // 3))  # Dynamic limit: 1-2 sectors based on total limit
+        ai_sectors = self._fetch_ai_sectors_from_full_data(max_count=max_ai_sectors)
         
         if ai_sectors:
-            # Combine existing sectors with AI sectors, then sort and limit
-            combined = sectors + ai_sectors
-            # Sort by change percentage (descending)
-            combined.sort(key=lambda x: x.get('change', 0), reverse=True)
+            # Insert AI sectors after the top 2 performers to ensure visibility
+            # while still respecting top performing sectors
+            if len(sectors) >= 2:
+                # Insert after position 2
+                combined = sectors[:2] + ai_sectors + sectors[2:]
+            else:
+                # Add to the end if we have fewer than 2 sectors
+                combined = sectors + ai_sectors
+            
             logger.info(f"Added {len(ai_sectors)} AI-related sectors to the list")
             return combined[:limit]
         
         return sectors[:limit]
     
-    def _fetch_ai_sectors_from_full_data(self) -> List[Dict[str, Any]]:
+    def _fetch_ai_sectors_from_full_data(self, max_count: int = 2) -> List[Dict[str, Any]]:
         """
         Fetch AI-related sectors from the full dataset
-        Returns up to 2 AI-related sectors if found
+        
+        Args:
+            max_count: Maximum number of AI sectors to return (default: 2)
+            
+        Returns:
+            List of AI-related sectors (up to max_count)
         """
         if 'akshare' not in self.available_sources:
             return []
@@ -539,8 +551,8 @@ class MultiSourceDataFetcher:
                             'source': 'tonghuashun'
                         })
                         
-                        # Limit to 2 AI sectors to not overwhelm the list
-                        if len(ai_sectors) >= 2:
+                        # Limit to max_count AI sectors
+                        if len(ai_sectors) >= max_count:
                             break
                     except (ValueError, TypeError):
                         continue
