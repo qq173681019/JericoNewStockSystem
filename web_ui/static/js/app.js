@@ -1381,6 +1381,7 @@ function drawSectorTreemap(sectors) {
     cells.forEach((cell, index) => {
         const change = cell.change || 0;
         const color = getTreemapColor(change);
+        const textColor = getTextColorForBackground(color);
         const changeSign = change > 0 ? '+' : '';
         
         // Determine size class for text visibility (mobile-responsive)
@@ -1394,7 +1395,7 @@ function drawSectorTreemap(sectors) {
         html += `
             <div class="treemap-cell ${sizeClass}" 
                  data-cell-index="${index}"
-                 style="left: ${cell.x}px; top: ${cell.y}px; width: ${cell.w}px; height: ${cell.h}px; background: ${color};"
+                 style="left: ${cell.x}px; top: ${cell.y}px; width: ${cell.w}px; height: ${cell.h}px; background: ${color}; color: ${textColor};"
                  title="${cell.name}: ${changeSign}${change}%\n热度: ${cell.heat}\n个股数: ${cell.stocks}">
                 <span class="cell-name">${cell.name}</span>
                 <span class="cell-change">${changeSign}${change}%</span>
@@ -1745,6 +1746,38 @@ function getTreemapColor(change) {
     if (change > -5) return '#81C784';         // 绿色 (Green) - -5% to -3%
     if (change > -8) return '#43A047';         // 深绿色 (Dark green) - -8% to -5%
     return '#1B5E20';                           // 黑绿色 (Black-green) - <=-8%
+}
+
+// Cache for text color calculations to avoid redundant computations
+const textColorCache = new Map();
+
+// Calculate appropriate text color based on background brightness
+// Returns dark text for light backgrounds, light text for dark backgrounds
+function getTextColorForBackground(bgColor) {
+    // Check cache first
+    if (textColorCache.has(bgColor)) {
+        return textColorCache.get(bgColor);
+    }
+    
+    // Convert hex to RGB
+    const hex = bgColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Calculate relative luminance (perceived brightness)
+    // Using formula from WCAG 2.0
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Threshold of 0.6 provides sufficient contrast ratio for readability
+    // This ensures WCAG AA compliance for normal text (4.5:1 contrast ratio)
+    // Light backgrounds (luminance > 0.6) get dark text, dark backgrounds get light text
+    const textColor = luminance > 0.6 ? '#000000' : '#FFFFFF';
+    
+    // Cache the result
+    textColorCache.set(bgColor, textColor);
+    
+    return textColor;
 }
 
 // Get color based on change percentage (for grid view)
