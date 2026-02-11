@@ -1015,7 +1015,11 @@ def get_analytics():
                 {'name': '美容护理', 'heat': 59, 'stocks': 32, 'change': 0.6, 'source': 'demo'},
                 {'name': '家用电器', 'heat': 54, 'stocks': 47, 'change': -0.2, 'source': 'demo'},
                 {'name': '社会服务', 'heat': 49, 'stocks': 55, 'change': -0.9, 'source': 'demo'},
-                {'name': '煤炭', 'heat': 47, 'stocks': 43, 'change': -1.3, 'source': 'demo'}
+                {'name': '煤炭', 'heat': 47, 'stocks': 43, 'change': -1.3, 'source': 'demo'},
+                {'name': '人工智能', 'heat': 92, 'stocks': 87, 'change': 5.8, 'source': 'demo'},
+                {'name': 'AIGC', 'heat': 89, 'stocks': 45, 'change': 4.9, 'source': 'demo'},
+                {'name': 'ChatGPT', 'heat': 86, 'stocks': 38, 'change': 4.5, 'source': 'demo'},
+                {'name': '算力', 'heat': 84, 'stocks': 52, 'change': 3.8, 'source': 'demo'}
             ]
         
         sectors_data = {
