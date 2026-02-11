@@ -602,12 +602,21 @@ function setTimeframeError(timeframe, message) {
 
 // Update timeframe card with prediction data
 function updateTimeframeCard(timeframe, data) {
-    // Update status (no more fallback, only success)
+    // Check if this is fallback data
+    const isFallbackData = data.dataSource === 'fallback';
+    
+    // Update status
     const statusElement = document.getElementById(`status${timeframe}`);
     if (statusElement) {
-        statusElement.textContent = '✓';
-        statusElement.className = 'timeframe-status success';
-        statusElement.title = '';
+        if (isFallbackData) {
+            statusElement.textContent = '⚠';
+            statusElement.className = 'timeframe-status warning';
+            statusElement.title = '使用模拟数据预测（真实数据源暂时不可用）';
+        } else {
+            statusElement.textContent = '✓';
+            statusElement.className = 'timeframe-status success';
+            statusElement.title = '使用真实市场数据预测';
+        }
     }
     
     // Update price
@@ -654,8 +663,8 @@ function updateTimeframeCard(timeframe, data) {
         const confidence = (data.prediction.confidence * 100).toFixed(0);
         confidenceElement.textContent = `${confidence}%`;
         
-        // Style based on confidence level
-        if (isFallback || data.prediction.confidence < 0.4) {
+        // Style based on confidence level and data source
+        if (isFallbackData || data.prediction.confidence < 0.4) {
             confidenceElement.style.color = '#ff6b6b';
         } else if (data.prediction.confidence < 0.7) {
             confidenceElement.style.color = '#ffa500';

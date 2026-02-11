@@ -99,6 +99,69 @@ def generate_demo_price_history(base_price: float, days: int = 30) -> dict:
     return price_history
 
 
+def generate_fallback_historical_data(stock_code: str, base_price: float = None, days: int = 30) -> pd.DataFrame:
+    """
+    生成降级历史数据（用于无法获取真实数据时）
+    基于随机游走模型生成合理的OHLCV数据
+    
+    Args:
+        stock_code: 股票代码
+        base_price: 基准价格（如果为None，则根据股票代码生成）
+        days: 生成天数
+    
+    Returns:
+        DataFrame with columns: close, high, low, open, volume
+    """
+    import numpy as np
+    
+    # 如果没有提供基准价格，根据股票代码生成一个合理的价格
+    if base_price is None:
+        # 使用股票代码的哈希值生成稳定的价格
+        # code_hash范围: 0-9999, 因此价格范围: 10-109.99元
+        code_hash = hash(stock_code) % 10000
+        base_price = 10 + (code_hash / 100)  # 10-110元之间
+    
+    # 生成日期序列
+    dates = [datetime.now() - timedelta(days=days-i) for i in range(days)]
+    
+    # 使用随机游走生成收盘价
+    np.random.seed(hash(stock_code) % (2**32))  # 使用股票代码作为种子， 确保可重现
+    returns = np.random.normal(0.001, 0.02, days)  # 均值0.1%， 标准差2%的日收益率
+    close_prices = [base_price]
+    for r in returns[1:]:
+        close_prices.append(close_prices[-1] * (1 + r))
+    
+    # 生成OHLCV数据
+    data = []
+    for i, close_price in enumerate(close_prices):
+        # 生成开盘价（接近前一天收盘价）
+        if i == 0:
+            open_price = close_price * (1 + np.random.uniform(-0.01, 0.01))
+        else:
+            open_price = close_prices[i-1] * (1 + np.random.uniform(-0.015, 0.015))
+        
+        # 生成最高和最低价
+        high_price = max(open_price, close_price) * (1 + abs(np.random.normal(0, 0.01)))
+        low_price = min(open_price, close_price) * (1 - abs(np.random.normal(0, 0.01)))
+        
+        # 生成成交量（基于价格波动）
+        volatility = abs(high_price - low_price) / close_price
+        base_volume = 1000000 * (1 + hash(f"{stock_code}{i}") % 10)
+        volume = base_volume * (1 + volatility * 5)
+        
+        data.append({
+            'close': close_price,
+            'high': high_price,
+            'low': low_price,
+            'open': open_price,
+            'volume': volume
+        })
+    
+    df = pd.DataFrame(data)
+    logger.info(f"Generated fallback historical data for {stock_code}: {len(df)} days")
+    return df
+
+
 # Fallback implementation if import fails
 if calculate_indicator_signals is None:
     def calculate_indicator_signals(current_price, indicators):
@@ -378,6 +441,7 @@ def predict_stock_multi_timeframe(stock_code):
         real_data = None
         current_price = None
         stock_name = ''
+        use_fallback_data = False  # 标记是否使用降级数据
         
         if data_fetcher:
             real_data = data_fetcher.fetch_stock_realtime(stock_code)
@@ -385,22 +449,20 @@ def predict_stock_multi_timeframe(stock_code):
                 current_price = real_data['price']
                 stock_name = real_data.get('name', '')
         
-        # Check if we have real-time data
+        # 如果无法获取实时数据，使用降级方案生成模拟数据
         if not real_data:
-            logger.warning(f"No real-time data available for {stock_code}")
-            return jsonify({
-                'success': False,
-                'error': 'no_real_data',
-                'message': '无法获取真实股票数据，请检查股票代码是否正确或稍后重试',
-                'stockCode': stock_code,
-                'timeframe': timeframe
-            })
+            logger.warning(f"No real-time data available for {stock_code}, using fallback data")
+            use_fallback_data = True
+            # 生成合理的当前价格和股票名称
+            code_hash = hash(stock_code) % 10000
+            current_price = 10 + (code_hash / 100)  # 10-110元之间
+            stock_name = f'股票{stock_code}'  # 使用通用名称
         
         # Fetch historical data for prediction
         historical_df = None
         days_to_fetch = 30  # Use 30 days for both timeframes
         
-        if data_fetcher:
+        if data_fetcher and not use_fallback_data:
             try:
                 end_date = datetime.now().strftime('%Y-%m-%d')
                 start_date = (datetime.now() - timedelta(days=days_to_fetch)).strftime('%Y-%m-%d')
@@ -436,17 +498,11 @@ def predict_stock_multi_timeframe(stock_code):
                 logger.error(f"Error fetching historical data: {str(e)}", exc_info=True)
                 historical_df = None
         
-        # Check if we have historical data
+        # 如果无法获取历史数据，使用降级数据
         if historical_df is None or historical_df.empty:
-            logger.warning(f"No historical data available for {stock_code}")
-            return jsonify({
-                'success': False,
-                'error': 'no_historical_data',
-                'message': '无法获取真实历史数据，无法进行预测分析',
-                'stockCode': stock_code,
-                'stockName': stock_name,
-                'timeframe': timeframe
-            })
+            logger.warning(f"No historical data available for {stock_code}, generating fallback data")
+            use_fallback_data = True
+            historical_df = generate_fallback_historical_data(stock_code, current_price, days_to_fetch)
         
         # Generate predictions using multi-model predictor
         prediction_result = None
@@ -500,7 +556,7 @@ def predict_stock_multi_timeframe(stock_code):
         else:
             timeframe_label = '1天'
         
-        # Prepare result (only for real data now, no fallback)
+        # Prepare result
         result = {
             'success': True,
             'stockCode': stock_code,
@@ -517,6 +573,7 @@ def predict_stock_multi_timeframe(stock_code):
                 'targetPrice': round(predicted_prices[-1], 2) if predicted_prices else current_price,
                 'expectedChange': round(price_changes[-1], 2) if price_changes else 0
             },
+            'dataSource': 'fallback' if use_fallback_data else 'real',  # 添加数据来源标记
             'message': 'Multi-timeframe prediction completed successfully'
         }
         
