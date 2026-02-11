@@ -23,15 +23,24 @@ MIN_AI_SECTORS_HEATMAP = 5  # Minimum AI sectors for heatmap view (limit >= 50)
 MIN_AI_SECTORS_SMALL = 2    # Minimum AI sectors for small lists (limit < 50)
 HEATMAP_THRESHOLD = 50      # Threshold to determine if it's a heatmap view
 
+# AI-related keywords for sector detection (expanded list for comprehensive coverage)
+AI_KEYWORDS = [
+    'AI', '人工智能', 'AI应用', '机器人', 'ChatGPT', 'AIGC', '算力',
+    '大模型', 'GPT', '智能驾驶', '工业机器人', '服务机器人', '机器视觉',
+    '语音识别', '自然语言', '深度学习', '神经网络'
+]
+
 # Synthetic AI sector data (used as fallback when real data is unavailable)
+# Heat values are calculated using the formula: heat = 50 + (change * 5)
+# These values represent realistic market scenarios for AI sectors
 SYNTHETIC_AI_SECTORS = [
-    {'name': '人工智能', 'heat': 88, 'stocks': 87, 'change': 4.2, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': '机器人', 'heat': 85, 'stocks': 63, 'change': 3.8, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': 'AIGC', 'heat': 90, 'stocks': 45, 'change': 5.1, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': 'ChatGPT', 'heat': 87, 'stocks': 38, 'change': 4.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': '算力', 'heat': 84, 'stocks': 52, 'change': 3.9, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': '大模型', 'heat': 86, 'stocks': 41, 'change': 4.3, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': '智能驾驶', 'heat': 82, 'stocks': 58, 'change': 3.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '人工智能', 'heat': 71, 'stocks': 87, 'change': 4.2, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '机器人', 'heat': 69, 'stocks': 63, 'change': 3.8, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': 'AIGC', 'heat': 76, 'stocks': 45, 'change': 5.1, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': 'ChatGPT', 'heat': 73, 'stocks': 38, 'change': 4.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '算力', 'heat': 70, 'stocks': 52, 'change': 3.9, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '大模型', 'heat': 72, 'stocks': 41, 'change': 4.3, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '智能驾驶', 'heat': 68, 'stocks': 58, 'change': 3.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
 ]
 
 
@@ -488,14 +497,11 @@ class MultiSourceDataFetcher:
         Returns:
             Updated list with AI sectors included (AI sectors prioritized to appear near top)
         """
-        # Define important AI-related sector keywords
-        ai_keywords = ['AI', '人工智能', 'AI应用', '机器人', 'ChatGPT', 'AIGC', '算力']
-        
         # Count how many AI sectors are already present
         sector_names = [s['name'] for s in sectors]
         existing_ai_count = sum(
             1 for name in sector_names
-            if any(keyword in name for keyword in ai_keywords)
+            if any(keyword in name for keyword in AI_KEYWORDS)
         )
         
         # Determine minimum AI sectors based on list size
@@ -505,8 +511,8 @@ class MultiSourceDataFetcher:
             logger.info(f"AI-related sectors already sufficient: {existing_ai_count} sectors present")
             return sectors[:limit]
         
-        # Calculate how many more AI sectors we need to fetch
-        needed_ai_sectors = min_ai_sectors - existing_ai_count
+        # Calculate how many more AI sectors we need to fetch (ensure non-negative)
+        needed_ai_sectors = max(0, min_ai_sectors - existing_ai_count)
         logger.info(f"Need to add {needed_ai_sectors} more AI sectors (currently have {existing_ai_count})")
         
         # Try to fetch AI sector data from the full dataset
@@ -538,13 +544,6 @@ class MultiSourceDataFetcher:
         Returns:
             List of AI-related sectors (up to max_count)
         """
-        # Expanded AI keywords for better coverage
-        ai_keywords = [
-            'AI', '人工智能', 'AI应用', '机器人', 'ChatGPT', 'AIGC', '算力',
-            '大模型', 'GPT', '智能驾驶', '工业机器人', '服务机器人', '机器视觉',
-            '语音识别', '自然语言', '深度学习', '神经网络'
-        ]
-        
         ai_sectors = []
         
         # Try to fetch from AKShare first
@@ -557,8 +556,8 @@ class MultiSourceDataFetcher:
                 if df is not None and not df.empty:
                     for idx, row in df.iterrows():
                         sector_name = row.get('板块', '')
-                        # Check if this sector contains AI-related keywords
-                        if any(keyword in sector_name for keyword in ai_keywords):
+                        # Check if this sector contains AI-related keywords (using global constant)
+                        if any(keyword in sector_name for keyword in AI_KEYWORDS):
                             try:
                                 change = float(row.get('涨跌幅', 0))
                                 # Calculate heat score (0-100 scale)
