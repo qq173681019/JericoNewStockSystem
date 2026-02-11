@@ -546,6 +546,9 @@ class MultiSourceDataFetcher:
                             try:
                                 change = float(row.get('涨跌幅', 0))
                                 # Calculate heat score (0-100 scale)
+                                # Formula: base 50 (neutral) + (change% * 5) to amplify small movements
+                                # E.g., +2% change → 60 heat, -2% change → 40 heat
+                                # Clamped to [0, 100] range for consistency
                                 heat = min(100, max(0, 50 + change * 5))
                                 rising = int(row.get('上涨家数', 0) or 0)
                                 falling = int(row.get('下跌家数', 0) or 0)
@@ -579,13 +582,13 @@ class MultiSourceDataFetcher:
         logger.info("Using synthetic AI sector data as fallback")
         
         synthetic_ai_sectors = [
-            {'name': '人工智能', 'heat': 88, 'stocks': 87, 'change': 4.2, 'source': 'synthetic'},
-            {'name': '机器人', 'heat': 85, 'stocks': 63, 'change': 3.8, 'source': 'synthetic'},
-            {'name': 'AIGC', 'heat': 90, 'stocks': 45, 'change': 5.1, 'source': 'synthetic'},
-            {'name': 'ChatGPT', 'heat': 87, 'stocks': 38, 'change': 4.5, 'source': 'synthetic'},
-            {'name': '算力', 'heat': 84, 'stocks': 52, 'change': 3.9, 'source': 'synthetic'},
-            {'name': '大模型', 'heat': 86, 'stocks': 41, 'change': 4.3, 'source': 'synthetic'},
-            {'name': '智能驾驶', 'heat': 82, 'stocks': 58, 'change': 3.5, 'source': 'synthetic'},
+            {'name': '人工智能', 'heat': 88, 'stocks': 87, 'change': 4.2, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+            {'name': '机器人', 'heat': 85, 'stocks': 63, 'change': 3.8, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+            {'name': 'AIGC', 'heat': 90, 'stocks': 45, 'change': 5.1, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+            {'name': 'ChatGPT', 'heat': 87, 'stocks': 38, 'change': 4.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+            {'name': '算力', 'heat': 84, 'stocks': 52, 'change': 3.9, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+            {'name': '大模型', 'heat': 86, 'stocks': 41, 'change': 4.3, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+            {'name': '智能驾驶', 'heat': 82, 'stocks': 58, 'change': 3.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
         ]
         
         return synthetic_ai_sectors[:max_count]
