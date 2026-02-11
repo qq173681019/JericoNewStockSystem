@@ -1438,7 +1438,7 @@ function initTreemapEventHandlers() {
             const prevData = enlargedCell.data;
             enlargedCell.element.classList.remove('enlarged');
             enlargedCell.element.style.position = 'absolute';
-            enlargedCell.element.style.transform = 'scale(0.5)';
+            enlargedCell.element.style.transform = '';
             enlargedCell.element.style.zIndex = '';
             enlargedCell.element.style.left = prevData.x + 'px';
             enlargedCell.element.style.top = prevData.y + 'px';
@@ -1450,8 +1450,8 @@ function initTreemapEventHandlers() {
 /**
  * Handle click on treemap cell to enlarge or un-enlarge it.
  * All cells can be enlarged when clicked - threshold removed per user requirement.
- * Default state: cells are scaled to 0.5 (half of original designed size)
- * Enlarged state: cells are scaled to 1.0 (original designed size, appears 2x larger than default)
+ * Default state: cells are at their original calculated size (no scale transform)
+ * Enlarged state: cells are centered in the viewport at the same size with enhanced styling
  * 
  * @param {HTMLElement} cellElement - The DOM element of the clicked cell
  * @param {Object} cellData - The cell's data including position (x, y) and size (w, h)
@@ -1462,7 +1462,7 @@ function handleTreemapCellClick(cellElement, cellData, event) {
     if (cellElement.classList.contains('enlarged')) {
         cellElement.classList.remove('enlarged');
         cellElement.style.position = 'absolute';
-        cellElement.style.transform = 'scale(0.5)';
+        cellElement.style.transform = '';
         cellElement.style.zIndex = '';
         cellElement.style.left = cellData.x + 'px';
         cellElement.style.top = cellData.y + 'px';
@@ -1475,7 +1475,7 @@ function handleTreemapCellClick(cellElement, cellData, event) {
         const prevData = enlargedCell.data;
         enlargedCell.element.classList.remove('enlarged');
         enlargedCell.element.style.position = 'absolute';
-        enlargedCell.element.style.transform = 'scale(0.5)';
+        enlargedCell.element.style.transform = '';
         enlargedCell.element.style.zIndex = '';
         enlargedCell.element.style.left = prevData.x + 'px';
         enlargedCell.element.style.top = prevData.y + 'px';
@@ -1494,8 +1494,8 @@ function handleTreemapCellClick(cellElement, cellData, event) {
     cellElement.style.position = 'fixed';
     cellElement.style.left = viewportCenterX + 'px';
     cellElement.style.top = viewportCenterY + 'px';
-    // Scale to 1.0 (original designed size), which appears 2x larger compared to default 0.5
-    cellElement.style.transform = `translate(-50%, -50%) scale(1.0)`;
+    // Center the cell in the viewport (no scale change, just repositioning)
+    cellElement.style.transform = `translate(-50%, -50%)`;
     cellElement.style.zIndex = '1000';
     
     enlargedCell = { element: cellElement, data: cellData };
