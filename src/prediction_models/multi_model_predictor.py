@@ -602,7 +602,8 @@ class MultiModelPredictor:
             # Simple prediction: assume price stays at base_price to be consistent
             # This ensures the percentage change accurately reflects the prediction
             predicted_prices = [base_price] * pred_points
-            # Calculate change percentages - will be 0% since we predict no change
+            # Percentage changes are 0% since predicted price equals base price
+            # No calculation needed: (base_price - base_price) / base_price * 100 = 0
             price_changes = [0.0] * pred_points
             
             return {

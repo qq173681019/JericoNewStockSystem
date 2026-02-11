@@ -536,6 +536,10 @@ class MultiSourceDataFetcher:
                 if any(keyword in sector_name for keyword in ai_keywords):
                     try:
                         change = float(row.get('涨跌幅', 0))
+                        # Calculate heat score (0-100 scale)
+                        # Formula: base 50 (neutral) + (change% * 5) to amplify small movements
+                        # E.g., +2% change → 60 heat, -2% change → 40 heat
+                        # Clamped to [0, 100] range for consistency
                         heat = min(100, max(0, 50 + change * 5))
                         rising = int(row.get('上涨家数', 0) or 0)
                         falling = int(row.get('下跌家数', 0) or 0)
