@@ -1449,8 +1449,8 @@ function initTreemapEventHandlers() {
 /**
  * Handle click on treemap cell to enlarge or un-enlarge it.
  * All cells can be enlarged when clicked - threshold removed per user requirement.
- * Default state: cells are scaled to 0.5 (half size)
- * Enlarged state: cells are scaled to 1.0 (normal size, 2x relative to default)
+ * Default state: cells are scaled to 0.5 (half of original designed size)
+ * Enlarged state: cells are scaled to 1.0 (original designed size, appears 2x larger than default)
  * 
  * @param {HTMLElement} cellElement - The DOM element of the clicked cell
  * @param {Object} cellData - The cell's data including position (x, y) and size (w, h)
@@ -1493,7 +1493,7 @@ function handleTreemapCellClick(cellElement, cellData, event) {
     cellElement.style.position = 'fixed';
     cellElement.style.left = viewportCenterX + 'px';
     cellElement.style.top = viewportCenterY + 'px';
-    // Scale to 1.0 (normal size), which is 2x relative to default 0.5
+    // Scale to 1.0 (original designed size), which appears 2x larger compared to default 0.5
     cellElement.style.transform = `translate(-50%, -50%) scale(1.0)`;
     cellElement.style.zIndex = '1000';
     
