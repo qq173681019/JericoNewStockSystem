@@ -19,8 +19,8 @@ logger = setup_logger(__name__)
 
 
 # AI sector configuration constants
-MIN_AI_SECTORS_HEATMAP = 5  # Minimum AI sectors for heatmap view (limit >= 50)
-MIN_AI_SECTORS_SMALL = 2    # Minimum AI sectors for small lists (limit < 50)
+MIN_AI_SECTORS_HEATMAP = 5  # Minimum AI sectors for heatmap view (limit >= HEATMAP_THRESHOLD)
+MIN_AI_SECTORS_SMALL = 2    # Minimum AI sectors for small lists (limit < HEATMAP_THRESHOLD)
 HEATMAP_THRESHOLD = 50      # Threshold to determine if it's a heatmap view
 
 # AI-related keywords for sector detection (expanded list for comprehensive coverage)
@@ -31,16 +31,16 @@ AI_KEYWORDS = [
 ]
 
 # Synthetic AI sector data (used as fallback when real data is unavailable)
-# Heat values are calculated using the formula: heat = 50 + (change * 5)
+# Heat values are calculated using the formula: heat = int(50 + (change * 5))
 # These values represent realistic market scenarios for AI sectors
 SYNTHETIC_AI_SECTORS = [
-    {'name': '人工智能', 'heat': 71, 'stocks': 87, 'change': 4.2, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': '机器人', 'heat': 69, 'stocks': 63, 'change': 3.8, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': 'AIGC', 'heat': 76, 'stocks': 45, 'change': 5.1, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': 'ChatGPT', 'heat': 73, 'stocks': 38, 'change': 4.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': '算力', 'heat': 70, 'stocks': 52, 'change': 3.9, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': '大模型', 'heat': 72, 'stocks': 41, 'change': 4.3, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
-    {'name': '智能驾驶', 'heat': 68, 'stocks': 58, 'change': 3.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},
+    {'name': '人工智能', 'heat': 71, 'stocks': 87, 'change': 4.2, 'topCompanies': [], 'code': '', 'source': 'synthetic'},  # heat = 50 + 4.2*5 = 71.0
+    {'name': '机器人', 'heat': 69, 'stocks': 63, 'change': 3.8, 'topCompanies': [], 'code': '', 'source': 'synthetic'},    # heat = 50 + 3.8*5 = 69.0
+    {'name': 'AIGC', 'heat': 76, 'stocks': 45, 'change': 5.1, 'topCompanies': [], 'code': '', 'source': 'synthetic'},      # heat = 50 + 5.1*5 = 75.5 → 76
+    {'name': 'ChatGPT', 'heat': 73, 'stocks': 38, 'change': 4.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},   # heat = 50 + 4.5*5 = 72.5 → 73
+    {'name': '算力', 'heat': 70, 'stocks': 52, 'change': 3.9, 'topCompanies': [], 'code': '', 'source': 'synthetic'},      # heat = 50 + 3.9*5 = 69.5 → 70
+    {'name': '大模型', 'heat': 72, 'stocks': 41, 'change': 4.3, 'topCompanies': [], 'code': '', 'source': 'synthetic'},    # heat = 50 + 4.3*5 = 71.5 → 72
+    {'name': '智能驾驶', 'heat': 68, 'stocks': 58, 'change': 3.5, 'topCompanies': [], 'code': '', 'source': 'synthetic'},  # heat = 50 + 3.5*5 = 67.5 → 68
 ]
 
 
@@ -511,8 +511,9 @@ class MultiSourceDataFetcher:
             logger.info(f"AI-related sectors already sufficient: {existing_ai_count} sectors present")
             return sectors[:limit]
         
-        # Calculate how many more AI sectors we need to fetch (ensure non-negative)
-        needed_ai_sectors = max(0, min_ai_sectors - existing_ai_count)
+        # Calculate how many more AI sectors we need to fetch
+        # (guaranteed positive due to the check above: existing_ai_count < min_ai_sectors)
+        needed_ai_sectors = min_ai_sectors - existing_ai_count
         logger.info(f"Need to add {needed_ai_sectors} more AI sectors (currently have {existing_ai_count})")
         
         # Try to fetch AI sector data from the full dataset
