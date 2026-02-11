@@ -336,11 +336,16 @@ class MultiSourceDataFetcher:
         # Try TongHuaShun first (more accurate real-time data)
         result = self._fetch_sector_from_ths(limit)
         if result:
+            # Ensure AI-related sectors are included
+            result = self._ensure_ai_sectors(result, limit)
             return result
             
         # Fallback to EastMoney
         logger.warning("TongHuaShun data unavailable, falling back to EastMoney")
-        return self._fetch_sector_from_eastmoney(limit)
+        result = self._fetch_sector_from_eastmoney(limit)
+        if result:
+            result = self._ensure_ai_sectors(result, limit)
+        return result
     
     def _fetch_sector_from_ths(self, limit: int) -> List[Dict[str, Any]]:
         """Fetch sector data from TongHuaShun via AKShare with retry"""
@@ -453,6 +458,117 @@ class MultiSourceDataFetcher:
             logger.error(f"EastMoney sector fetch error: {str(e)}")
             
         return []
+    
+    def _ensure_ai_sectors(self, sectors: List[Dict[str, Any]], limit: int) -> List[Dict[str, Any]]:
+        """
+        Ensure AI-related sectors are included in the sector list
+        If AI sectors are missing from top performers, add them with fetched or estimated data
+        
+        Args:
+            sectors: List of sector dictionaries
+            limit: Target number of sectors
+            
+        Returns:
+            Updated list with AI sectors included (AI sectors prioritized to appear near top)
+        """
+        # Define important AI-related sector keywords
+        ai_keywords = ['AI', '人工智能', 'AI应用', '机器人', 'ChatGPT', 'AIGC', '算力']
+        
+        # Check if any AI sectors are already present
+        sector_names = [s['name'] for s in sectors]
+        has_ai_sector = any(
+            any(keyword in name for keyword in ai_keywords) 
+            for name in sector_names
+        )
+        
+        # If AI sectors are present or we've reached limit, return as is
+        if has_ai_sector:
+            logger.info("AI-related sectors already present in sector list")
+            return sectors[:limit]
+        
+        # Try to fetch AI sector data from the full dataset
+        # Allow up to 2 AI sectors to be added without overwhelming the list
+        max_ai_sectors = min(2, max(1, limit // 3))  # Dynamic limit: 1-2 sectors based on total limit
+        ai_sectors = self._fetch_ai_sectors_from_full_data(max_count=max_ai_sectors)
+        
+        if ai_sectors:
+            # Insert AI sectors after the top 2 performers to ensure visibility
+            # while still respecting top performing sectors
+            if len(sectors) >= 2:
+                # Insert after position 2
+                combined = sectors[:2] + ai_sectors + sectors[2:]
+            else:
+                # Add to the end if we have fewer than 2 sectors
+                combined = sectors + ai_sectors
+            
+            logger.info(f"Added {len(ai_sectors)} AI-related sectors to the list")
+            return combined[:limit]
+        
+        return sectors[:limit]
+    
+    def _fetch_ai_sectors_from_full_data(self, max_count: int = 2) -> List[Dict[str, Any]]:
+        """
+        Fetch AI-related sectors from the full dataset
+        
+        Args:
+            max_count: Maximum number of AI sectors to return (default: 2)
+            
+        Returns:
+            List of AI-related sectors (up to max_count)
+        """
+        if 'akshare' not in self.available_sources:
+            return []
+        
+        try:
+            ak = self.available_sources['akshare']
+            # Fetch full sector data (not limited)
+            df = ak.stock_board_industry_summary_ths()
+            
+            if df is None or df.empty:
+                return []
+            
+            ai_keywords = ['AI', '人工智能', 'AI应用', '机器人', 'ChatGPT', 'AIGC', '算力']
+            ai_sectors = []
+            
+            for idx, row in df.iterrows():
+                sector_name = row.get('板块', '')
+                # Check if this sector contains AI-related keywords
+                if any(keyword in sector_name for keyword in ai_keywords):
+                    try:
+                        change = float(row.get('涨跌幅', 0))
+                        # Calculate heat score (0-100 scale)
+                        # Formula: base 50 (neutral) + (change% * 5) to amplify small movements
+                        # E.g., +2% change → 60 heat, -2% change → 40 heat
+                        # Clamped to [0, 100] range for consistency
+                        heat = min(100, max(0, 50 + change * 5))
+                        rising = int(row.get('上涨家数', 0) or 0)
+                        falling = int(row.get('下跌家数', 0) or 0)
+                        leading_stock = row.get('领涨股', '')
+                        
+                        ai_sectors.append({
+                            'name': sector_name,
+                            'heat': int(heat),
+                            'stocks': rising + falling,
+                            'change': round(change, 2),
+                            'topCompanies': [leading_stock] if leading_stock else [],
+                            'code': '',
+                            'source': 'tonghuashun'
+                        })
+                        
+                        # Limit to max_count AI sectors
+                        if len(ai_sectors) >= max_count:
+                            break
+                    except (ValueError, TypeError):
+                        continue
+            
+            if ai_sectors:
+                logger.info(f"✓ Found {len(ai_sectors)} AI-related sectors in full dataset")
+            
+            return ai_sectors
+            
+        except Exception as e:
+            logger.warning(f"Failed to fetch AI sectors from full data: {str(e)}")
+            return []
 
     def compare_sources(self, stock_codes: List[str]) -> pd.DataFrame:
 

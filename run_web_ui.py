@@ -512,7 +512,8 @@ def predict_stock_multi_timeframe(stock_code):
                 logger.info(f"Running multi-model prediction with {len(historical_df)} data points")
                 prediction_result = multi_predictor.predict_multi_timeframe(
                     historical_df, 
-                    timeframe=timeframe
+                    timeframe=timeframe,
+                    current_price=current_price  # Pass real-time price for accurate percentage calculation
                 )
                 
                 if current_price is None and 'close' in historical_df.columns:
