@@ -6,6 +6,7 @@ A lightweight web interface for the Stock Intelligent Analysis & Prediction Syst
 import sys
 import argparse
 import socket
+import json
 from pathlib import Path
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
